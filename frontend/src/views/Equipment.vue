@@ -257,16 +257,16 @@ onMounted(() => {
 }
 
 .header-content {
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 3rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .title {
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: 700;
   margin: 0;
 }
@@ -288,9 +288,9 @@ onMounted(() => {
 }
 
 .main {
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 3rem;
 }
 
 .loading,
@@ -336,14 +336,8 @@ onMounted(() => {
 
 .equipment-container {
   display: grid;
-  grid-template-columns: 350px 1fr;
-  gap: 2rem;
-}
-
-@media (max-width: 1024px) {
-  .equipment-container {
-    grid-template-columns: 1fr;
-  }
+  grid-template-columns: 400px 1fr;
+  gap: 2.5rem;
 }
 
 .equipment-list,

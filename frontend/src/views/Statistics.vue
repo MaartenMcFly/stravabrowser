@@ -242,16 +242,16 @@ onMounted(async () => {
 }
 
 .header-content {
-  max-width: 1400px;
+  max-width: 1800px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 3rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .title {
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: 700;
   margin: 0;
 }
@@ -273,9 +273,9 @@ onMounted(async () => {
 }
 
 .main {
-  max-width: 1400px;
+  max-width: 1800px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 3rem;
 }
 
 .loading,
@@ -412,11 +412,11 @@ onMounted(async () => {
 }
 
 .chart-container {
-  min-height: 600px;
+  min-height: 700px;
 }
 
 .chart-container canvas {
-  max-height: 600px;
+  max-height: 700px;
 }
 
 .totals-grid {
@@ -448,29 +448,4 @@ onMounted(async () => {
   color: #333;
 }
 
-@media (max-width: 768px) {
-  .statistics-container {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto;
-  }
-
-  .year-toggles {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .chart-container {
-    grid-column: 1;
-    grid-row: 2;
-  }
-
-  .totals {
-    grid-column: 1;
-    grid-row: 3;
-  }
-
-  .totals-grid {
-    grid-template-columns: 1fr;
-  }
-}
 </style>

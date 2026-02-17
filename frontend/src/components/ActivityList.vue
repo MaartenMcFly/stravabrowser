@@ -55,7 +55,7 @@ async function fetchActivities(append = false) {
     }
     error.value = '';
 
-    const response = await getActivities(currentPage.value, 30);
+    const response = await getActivities(currentPage.value, 50);
 
     if (append) {
       activities.value = [...activities.value, ...response.activities];
@@ -142,15 +142,9 @@ onMounted(() => {
 
 .activities-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 2rem;
   margin-bottom: 2rem;
-}
-
-@media (max-width: 768px) {
-  .activities-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 .pagination {
