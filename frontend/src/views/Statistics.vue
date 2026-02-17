@@ -314,16 +314,16 @@ onMounted(async () => {
 }
 
 .statistics-container {
-  display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 2rem;
-  padding: 2rem 1rem;
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
   width: 100%;
   max-width: none;
   box-sizing: border-box;
 }
 
 .year-toggles {
+  flex: 0 0 300px;
   background: white;
   border-radius: 12px;
   padding: 1.5rem;
@@ -332,12 +332,12 @@ onMounted(async () => {
 }
 
 .chart-container {
+  flex: 1;
   background: white;
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  box-sizing: border-box;
+  min-width: 0;
 }
 
 .section-title {
