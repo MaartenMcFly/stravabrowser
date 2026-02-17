@@ -232,6 +232,7 @@ onMounted(async () => {
 .statistics {
   min-height: 100vh;
   background: #f5f7fa;
+  width: 100%;
 }
 
 .header {
@@ -323,7 +324,9 @@ onMounted(async () => {
   grid-template-columns: 300px 1fr;
   grid-template-rows: auto auto;
   gap: 2rem;
-  padding: 3rem 1.5rem;
+  padding: 2rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .year-toggles {
@@ -343,6 +346,8 @@ onMounted(async () => {
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .totals {
@@ -352,6 +357,8 @@ onMounted(async () => {
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .section-title {
