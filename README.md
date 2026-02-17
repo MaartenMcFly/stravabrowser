@@ -16,6 +16,21 @@ A web application to browse your Strava activities using secure OAuth 2.0 authen
 - **Frontend**: Vue.js 3 + Vite for the user interface
 - **Security**: Session-based authentication with tokens stored server-side
 
+## Deployment Options
+
+### 🐳 Docker (Recommended for Production)
+The easiest way to run this application is using Docker. See **[DOCKER.md](DOCKER.md)** for complete instructions.
+
+**Quick start:**
+```bash
+cp .env.docker.example backend/.env
+# Edit backend/.env with your Strava credentials
+docker-compose up -d
+```
+
+### 💻 Local Development
+For local development without Docker:
+
 ## Prerequisites
 
 - Node.js 18+ installed
