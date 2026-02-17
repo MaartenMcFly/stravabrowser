@@ -233,6 +233,9 @@ onMounted(async () => {
   min-height: 100vh;
   background: #f5f7fa;
   width: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 .header {
@@ -240,14 +243,18 @@ onMounted(async () => {
   color: white;
   padding: 2rem 0;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .header-content {
-  margin: 0 auto;
-  padding: 0 3rem;
+  margin: 0;
+  padding: 0 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .title {
@@ -275,6 +282,8 @@ onMounted(async () => {
 .main {
   width: 100%;
   padding: 0;
+  margin: 0;
+  box-sizing: border-box;
 }
 
 .loading,
@@ -324,8 +333,9 @@ onMounted(async () => {
   grid-template-columns: 300px 1fr;
   grid-template-rows: auto auto;
   gap: 2rem;
-  padding: 2rem;
+  padding: 2rem 1rem;
   width: 100%;
+  max-width: none;
   box-sizing: border-box;
 }
 
