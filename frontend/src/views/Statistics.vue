@@ -242,7 +242,6 @@ onMounted(async () => {
 }
 
 .header-content {
-  max-width: 1800px;
   margin: 0 auto;
   padding: 0 3rem;
   display: flex;
@@ -273,8 +272,7 @@ onMounted(async () => {
 }
 
 .main {
-  max-width: 1800px;
-  margin: 0 auto;
+  width: 100%;
   padding: 3rem;
 }
 
