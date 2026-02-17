@@ -22,6 +22,13 @@ onMounted(async () => {
   box-sizing: border-box;
 }
 
+html, body {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
     Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
@@ -31,5 +38,6 @@ body {
 
 #app {
   min-height: 100vh;
+  width: 100%;
 }
 </style>
