@@ -46,7 +46,7 @@
 
         <!-- Chart -->
         <div class="chart-container">
-          <h2 class="section-title">Weekly Distance (km)</h2>
+          <h2 class="section-title">Cumulative Distance (km)</h2>
           <canvas ref="chartCanvas"></canvas>
         </div>
       </div>
@@ -161,7 +161,7 @@ function createChart() {
         tooltip: {
           callbacks: {
             label: function(context) {
-              return `${context.dataset.label}: ${context.parsed.y.toFixed(1)} km`;
+              return `${context.dataset.label}: ${context.parsed.y.toFixed(1)} km (cumulative)`;
             },
           },
         },
@@ -183,7 +183,7 @@ function createChart() {
         y: {
           title: {
             display: true,
-            text: 'Distance (km)',
+            text: 'Cumulative Distance (km)',
             font: {
               size: 14,
               weight: 'bold',

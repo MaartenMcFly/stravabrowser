@@ -60,24 +60,27 @@ router.get('/weekly-distance', async (req, res, next) => {
       yearWeekData[year][week] += activity.distance / 1000;
     });
 
-    // Format for frontend
+    // Format for frontend with cumulative distances
     const years = Object.keys(yearWeekData)
       .sort((a, b) => b - a) // Sort descending (newest first)
       .map(year => {
         const weeks = [];
+        let cumulativeDistance = 0;
+
         for (let week = 1; week <= 52; week++) {
+          const weekDistance = yearWeekData[year][week] || 0;
+          cumulativeDistance += weekDistance;
+
           weeks.push({
             week,
-            distance: Math.round((yearWeekData[year][week] || 0) * 10) / 10, // Round to 1 decimal
+            distance: Math.round(cumulativeDistance * 10) / 10, // Cumulative distance rounded to 1 decimal
           });
         }
 
         return {
           year: parseInt(year),
           weeks,
-          totalDistance: Math.round(
-            Object.values(yearWeekData[year]).reduce((sum, dist) => sum + dist, 0)
-          ),
+          totalDistance: Math.round(cumulativeDistance),
         };
       });
 
