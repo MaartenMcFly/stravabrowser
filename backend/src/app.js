@@ -14,6 +14,9 @@ dotenv.config();
 
 const app = express();
 
+// Trust proxy - required when behind nginx
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
