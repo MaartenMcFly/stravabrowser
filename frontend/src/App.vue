@@ -39,5 +39,14 @@ body {
 #app {
   min-height: 100vh;
   width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Remove any default app styling that might exist elsewhere */
+app {
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 </style>
