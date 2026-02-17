@@ -21,10 +21,6 @@ docker compose down
 echo "📥 Pulling latest code from GitHub..."
 git pull origin main
 
-# Rebuild containers
-echo "🔨 Rebuilding containers..."
-docker compose build --no-cache
-
 # Start containers
 echo "🚀 Starting containers..."
 docker compose up -d
