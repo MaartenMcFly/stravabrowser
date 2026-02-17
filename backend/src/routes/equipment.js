@@ -21,7 +21,10 @@ router.get('/', async (req, res, next) => {
       return res.status(401).json({ error: 'Athlete ID not found in session' });
     }
 
-    // Check if cache is valid
+    // Migrate any old equipment cache to athlete-based
+    cache.migrateActivitiesToAthlete(sessionId, athleteId);
+
+    // Check if we have cached equipment
     const cacheKey = `equipment:${athleteId}`;
     const isCacheValid = cache.isCacheValid(athleteId, cacheKey);
 
@@ -31,7 +34,7 @@ router.get('/', async (req, res, next) => {
       console.log('✅ Serving equipment from cache');
       gear = cache.getEquipment(athleteId);
     } else {
-      console.log('🔄 Fetching fresh equipment from Strava API');
+      console.log('🔄 Fetching equipment from Strava API (cached for 24h)');
 
       // Fetch equipment from Strava
       gear = await getGear(sessionId);
