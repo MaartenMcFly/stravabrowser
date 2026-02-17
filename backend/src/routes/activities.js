@@ -76,6 +76,8 @@ router.get('/', async (req, res, next) => {
     // Always serve from cache
     const activities = cache.getActivities(sessionId, gearId, page, perPage);
 
+    console.log(`📤 Returning ${activities.length} activities for session ${sessionId} (page ${page})`);
+
     res.json({
       activities,
       page,
