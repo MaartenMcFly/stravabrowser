@@ -49,21 +49,6 @@
           <h2 class="section-title">Weekly Distance (km)</h2>
           <canvas ref="chartCanvas"></canvas>
         </div>
-
-        <!-- Legend showing totals -->
-        <div v-if="selectedYears.length > 0" class="totals">
-          <h3 class="subsection-title">Total Distance by Year</h3>
-          <div class="totals-grid">
-            <div
-              v-for="yearData in filteredYears"
-              :key="yearData.year"
-              class="total-card"
-            >
-              <span class="total-year">{{ yearData.year }}</span>
-              <span class="total-distance">{{ yearData.totalDistance.toLocaleString() }} km</span>
-            </div>
-          </div>
-        </div>
       </div>
     </main>
   </div>
@@ -331,7 +316,6 @@ onMounted(async () => {
 .statistics-container {
   display: grid;
   grid-template-columns: 300px 1fr;
-  grid-template-rows: auto auto;
   gap: 2rem;
   padding: 2rem 1rem;
   width: 100%;
@@ -340,8 +324,6 @@ onMounted(async () => {
 }
 
 .year-toggles {
-  grid-column: 1;
-  grid-row: 1;
   background: white;
   border-radius: 12px;
   padding: 1.5rem;
@@ -350,19 +332,6 @@ onMounted(async () => {
 }
 
 .chart-container {
-  grid-column: 2;
-  grid-row: 1;
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.totals {
-  grid-column: 1 / -1;
-  grid-row: 2;
   background: white;
   border-radius: 12px;
   padding: 1.5rem;
@@ -375,13 +344,6 @@ onMounted(async () => {
   font-size: 1.5rem;
   font-weight: 600;
   margin: 0 0 1.5rem 0;
-  color: #333;
-}
-
-.subsection-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0 0 1rem 0;
   color: #333;
 }
 
@@ -435,34 +397,4 @@ onMounted(async () => {
 .chart-container canvas {
   max-height: 700px;
 }
-
-.totals-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 1rem;
-}
-
-.total-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1.5rem;
-  background: #f9fafb;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  text-align: center;
-}
-
-.total-year {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #667eea;
-}
-
-.total-distance {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #333;
-}
-
 </style>
