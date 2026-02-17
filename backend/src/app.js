@@ -35,14 +35,23 @@ app.use(
     secret: process.env.SESSION_SECRET || 'fallback-secret-change-this',
     resave: false,
     saveUninitialized: false,
+    name: 'strava.sid', // Custom cookie name
     cookie: {
       secure: false, // Set to true only when using HTTPS
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       sameSite: 'lax',
+      path: '/',
+      domain: undefined, // Don't set domain - let browser handle it
     },
   })
 );
+
+// Debug middleware to log session info
+app.use((req, res, next) => {
+  console.log(`📋 ${req.method} ${req.path} - Session ID: ${req.session?.id || 'NONE'}`);
+  next();
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {
