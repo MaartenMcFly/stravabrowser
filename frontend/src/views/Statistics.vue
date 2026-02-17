@@ -23,7 +23,7 @@
       <div v-else class="statistics-container">
         <!-- Year Toggles -->
         <div class="year-toggles">
-          <h2 class="section-title">Select Years to Display</h2>
+          <h2 class="section-title">Select Years</h2>
           <div class="toggle-grid">
             <label
               v-for="yearData in years"
@@ -320,14 +320,34 @@ onMounted(async () => {
 }
 
 .statistics-container {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  grid-template-rows: auto auto;
   gap: 2rem;
 }
 
-.year-toggles,
-.chart-container,
+.year-toggles {
+  grid-column: 1;
+  grid-row: 1;
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  align-self: start;
+}
+
+.chart-container {
+  grid-column: 2;
+  grid-row: 1;
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 .totals {
+  grid-column: 1 / -1;
+  grid-row: 2;
   background: white;
   border-radius: 12px;
   padding: 1.5rem;
@@ -349,9 +369,9 @@ onMounted(async () => {
 }
 
 .toggle-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .toggle-item {
@@ -392,11 +412,11 @@ onMounted(async () => {
 }
 
 .chart-container {
-  min-height: 500px;
+  min-height: 600px;
 }
 
 .chart-container canvas {
-  max-height: 500px;
+  max-height: 600px;
 }
 
 .totals-grid {
@@ -429,7 +449,26 @@ onMounted(async () => {
 }
 
 @media (max-width: 768px) {
-  .toggle-grid,
+  .statistics-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+  }
+
+  .year-toggles {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .chart-container {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .totals {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
   .totals-grid {
     grid-template-columns: 1fr;
   }
