@@ -273,13 +273,14 @@ onMounted(async () => {
 
 .main {
   width: 100%;
-  padding: 3rem;
+  padding: 0;
 }
 
 .loading,
 .error {
   text-align: center;
-  padding: 3rem 1rem;
+  padding: 3rem;
+  margin: 3rem 1.5rem;
 }
 
 .spinner {
@@ -322,6 +323,7 @@ onMounted(async () => {
   grid-template-columns: 300px 1fr;
   grid-template-rows: auto auto;
   gap: 2rem;
+  padding: 3rem 1.5rem;
 }
 
 .year-toggles {
