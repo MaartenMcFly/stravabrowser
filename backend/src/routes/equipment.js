@@ -15,16 +15,21 @@ router.use(requireAuth);
 router.get('/', async (req, res, next) => {
   try {
     const sessionId = req.session.id;
+    const athleteId = req.session.athleteId?.toString();
+
+    if (!athleteId) {
+      return res.status(401).json({ error: 'Athlete ID not found in session' });
+    }
 
     // Check if cache is valid
-    const cacheKey = `equipment:${sessionId}`;
-    const isCacheValid = cache.isCacheValid(sessionId, cacheKey);
+    const cacheKey = `equipment:${athleteId}`;
+    const isCacheValid = cache.isCacheValid(athleteId, cacheKey);
 
     let gear;
 
     if (isCacheValid) {
       console.log('✅ Serving equipment from cache');
-      gear = cache.getEquipment(sessionId);
+      gear = cache.getEquipment(athleteId);
     } else {
       console.log('🔄 Fetching fresh equipment from Strava API');
 
@@ -32,8 +37,8 @@ router.get('/', async (req, res, next) => {
       gear = await getGear(sessionId);
 
       // Save to cache
-      cache.saveEquipment(sessionId, gear);
-      cache.updateCacheMetadata(sessionId, cacheKey, cache.TTL.EQUIPMENT);
+      cache.saveEquipment(athleteId, gear);
+      cache.updateCacheMetadata(athleteId, cacheKey, cache.TTL.EQUIPMENT);
     }
 
     console.log(`Found ${gear.length} piece(s) of equipment`);
@@ -79,8 +84,13 @@ router.get('/:id', async (req, res, next) => {
  */
 router.get('/:id/activities', async (req, res, next) => {
   try {
+    const athleteId = req.session.athleteId?.toString();
     const sessionId = req.session.id;
     const gearId = req.params.id;
+
+    if (!athleteId) {
+      return res.status(401).json({ error: 'Athlete ID not found in session' });
+    }
 
     if (!gearId) {
       return res.status(400).json({
@@ -90,7 +100,7 @@ router.get('/:id/activities', async (req, res, next) => {
     }
 
     // Get all activities from cache (they should be cached from /api/activities call)
-    const activities = cache.getAllActivities(sessionId).filter(a => a.gear_id === gearId);
+    const activities = cache.getAllActivities(athleteId).filter(a => a.gear_id === gearId);
 
     console.log(`Found ${activities.length} activities for gear ${gearId}`);
 

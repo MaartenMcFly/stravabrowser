@@ -15,17 +15,22 @@ router.use(requireAuth);
 router.get('/', async (req, res, next) => {
   try {
     const sessionId = req.session.id;
+    const athleteId = req.session.athleteId?.toString();
     const page = parseInt(req.query.page) || 1;
     const perPage = parseInt(req.query.per_page) || 30;
     const gearId = req.query.gear_id || null;
 
-    const cacheKey = `activities:${sessionId}`;
-    const hasCache = cache.hasActivitiesCache(sessionId);
-    const shouldCheckForNew = !cache.isCacheValid(sessionId, cacheKey);
+    if (!athleteId) {
+      return res.status(401).json({ error: 'Athlete ID not found in session' });
+    }
+
+    const cacheKey = `activities:${athleteId}`;
+    const hasCache = cache.hasActivitiesCache(athleteId);
+    const shouldCheckForNew = !cache.isCacheValid(athleteId, cacheKey);
 
     if (!hasCache) {
       // INITIAL LOAD: No cache exists, fetch all activities
-      console.log('📥 Initial load: Fetching all activities from Strava API');
+      console.log(`📥 Initial load: Fetching all activities from Strava API for athlete ${athleteId}`);
 
       const allActivities = [];
       let fetchPage = 1;
@@ -37,16 +42,16 @@ router.get('/', async (req, res, next) => {
         fetchPage++;
       }
 
-      // Save to cache
-      cache.saveActivities(sessionId, allActivities);
-      cache.updateCacheMetadata(sessionId, cacheKey, cache.TTL.ACTIVITIES_CHECK);
+      // Save to cache with athlete ID
+      cache.saveActivities(athleteId, allActivities);
+      cache.updateCacheMetadata(athleteId, cacheKey, cache.TTL.ACTIVITIES_CHECK);
 
       console.log(`💾 Cached ${allActivities.length} activities`);
     } else if (shouldCheckForNew) {
       // INCREMENTAL UPDATE: Check for new activities since last check
       console.log('🔄 Checking for new activities since last update');
 
-      const mostRecentDate = cache.getMostRecentActivityDate(sessionId);
+      const mostRecentDate = cache.getMostRecentActivityDate(athleteId);
       const mostRecentTimestamp = mostRecentDate ? Math.floor(new Date(mostRecentDate).getTime() / 1000) : null;
 
       // Fetch only recent activities (first page is enough, sorted by date DESC)
@@ -62,21 +67,21 @@ router.get('/', async (req, res, next) => {
 
       if (newActivities.length > 0) {
         console.log(`📥 Found ${newActivities.length} new activities, adding to cache`);
-        cache.saveActivities(sessionId, newActivities);
+        cache.saveActivities(athleteId, newActivities);
       } else {
         console.log('✅ No new activities found');
       }
 
       // Update last check time
-      cache.updateCacheMetadata(sessionId, cacheKey, cache.TTL.ACTIVITIES_CHECK);
+      cache.updateCacheMetadata(athleteId, cacheKey, cache.TTL.ACTIVITIES_CHECK);
     } else {
       console.log('✅ Serving activities from cache (no check needed yet)');
     }
 
     // Always serve from cache
-    const activities = cache.getActivities(sessionId, gearId, page, perPage);
+    const activities = cache.getActivities(athleteId, gearId, page, perPage);
 
-    console.log(`📤 Returning ${activities.length} activities for session ${sessionId} (page ${page})`);
+    console.log(`📤 Returning ${activities.length} activities for athlete ${athleteId} (page ${page})`);
 
     res.json({
       activities,

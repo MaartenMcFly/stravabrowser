@@ -25,10 +25,14 @@ function getWeekNumber(date) {
  */
 router.get('/weekly-distance', async (req, res, next) => {
   try {
-    const sessionId = req.session.id;
+    const athleteId = req.session.athleteId?.toString();
+
+    if (!athleteId) {
+      return res.status(401).json({ error: 'Athlete ID not found in session' });
+    }
 
     // Get all activities from cache
-    const activities = cache.getAllActivities(sessionId);
+    const activities = cache.getAllActivities(athleteId);
 
     if (activities.length === 0) {
       return res.json({ years: [] });

@@ -1,7 +1,6 @@
 import express from 'express';
 import { generateAuthUrl, exchangeCodeForTokens } from '../services/stravaAuth.js';
 import { tokenStorage } from '../utils/tokenStorage.js';
-import { clearSessionCache } from '../services/cacheService.js';
 
 const router = express.Router();
 
@@ -80,14 +79,14 @@ router.get('/status', (req, res) => {
 
 /**
  * POST /auth/logout
- * Clear session and tokens
+ * Clear session and tokens (but keep activity cache tied to athlete)
  */
 router.post('/logout', (req, res) => {
   const sessionId = req.session?.id;
 
   if (sessionId) {
     tokenStorage.deleteTokens(sessionId);
-    clearSessionCache(sessionId);
+    // Note: We don't clear activity cache anymore since it's tied to athleteId, not sessionId
   }
 
   req.session.destroy((err) => {
