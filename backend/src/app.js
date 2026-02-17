@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import activitiesRoutes from './routes/activities.js';
 import equipmentRoutes from './routes/equipment.js';
+import statisticsRoutes from './routes/statistics.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 // Load environment variables
@@ -49,6 +50,7 @@ app.get('/health', (req, res) => {
 app.use('/auth', authRoutes);
 app.use('/api/activities', activitiesRoutes);
 app.use('/api/equipment', equipmentRoutes);
+app.use('/api/statistics', statisticsRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

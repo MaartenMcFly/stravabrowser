@@ -5,6 +5,7 @@ import Home from '../views/Home.vue';
 import Dashboard from '../views/Dashboard.vue';
 import Callback from '../views/Callback.vue';
 import Equipment from '../views/Equipment.vue';
+import Statistics from '../views/Statistics.vue';
 
 const routes = [
   {
@@ -23,6 +24,12 @@ const routes = [
     path: '/equipment',
     name: 'Equipment',
     component: Equipment,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/statistics',
+    name: 'Statistics',
+    component: Statistics,
     meta: { requiresAuth: true },
   },
   {
