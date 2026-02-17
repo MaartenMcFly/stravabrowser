@@ -22,7 +22,8 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     dns:
-      - 192.168.1.100  # AdGuard on Docker host (replace with your actual Docker host IP)
+      - 8.8.8.8        # Google DNS
+      - 1.1.1.1        # Cloudflare DNS
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
