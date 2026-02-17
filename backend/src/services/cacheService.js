@@ -247,6 +247,32 @@ export function hasActivitiesCache(sessionId) {
 }
 
 /**
+ * Migrate activities from old session IDs to athlete ID
+ * For single-user systems: updates all activities to the current athlete ID
+ * Returns number of activities migrated
+ */
+export function migrateActivitiesToAthlete(oldSessionId, athleteId) {
+  // Check if we have any activities at all in the database
+  const totalActivities = db.prepare('SELECT COUNT(*) as count FROM activities').get();
+
+  if (totalActivities.count === 0) {
+    return 0; // No activities to migrate
+  }
+
+  // Update all activities to use the athlete ID (works for single-user systems)
+  const stmt = db.prepare('UPDATE activities SET session_id = ? WHERE session_id != ?');
+  const result = stmt.run(athleteId, athleteId);
+
+  // Also migrate metadata
+  db.prepare('UPDATE cache_metadata SET session_id = ? WHERE session_id != ?').run(athleteId, athleteId);
+
+  // Also migrate equipment
+  db.prepare('UPDATE equipment SET session_id = ? WHERE session_id != ?').run(athleteId, athleteId);
+
+  return result.changes;
+}
+
+/**
  * Get cache statistics
  */
 export function getCacheStats(sessionId) {

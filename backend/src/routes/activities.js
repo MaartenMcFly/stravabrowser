@@ -25,6 +25,13 @@ router.get('/', async (req, res, next) => {
     }
 
     const cacheKey = `activities:${athleteId}`;
+
+    // Migration: Migrate any old session-based cache to athlete-based cache
+    const migratedCount = cache.migrateActivitiesToAthlete(sessionId, athleteId);
+    if (migratedCount > 0) {
+      console.log(`🔄 Migrated ${migratedCount} activities from old sessions to athlete ${athleteId}`);
+    }
+
     const hasCache = cache.hasActivitiesCache(athleteId);
     const shouldCheckForNew = !cache.isCacheValid(athleteId, cacheKey);
 
