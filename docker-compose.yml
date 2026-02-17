@@ -8,11 +8,11 @@ services:
     container_name: stravabrowser-backend
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "1300:3000"
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - FRONTEND_URL=http://localhost
+      - FRONTEND_URL=http://localhost:180
     env_file:
       - ./backend/.env
     volumes:
@@ -34,7 +34,7 @@ services:
     container_name: stravabrowser-frontend
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "180:80"
     depends_on:
       - backend
     networks:

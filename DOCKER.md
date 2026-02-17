@@ -23,7 +23,7 @@ Edit `backend/.env` and add your Strava credentials:
 ```env
 STRAVA_CLIENT_ID=your_actual_client_id
 STRAVA_CLIENT_SECRET=your_actual_client_secret
-STRAVA_REDIRECT_URI=http://localhost/auth/callback
+STRAVA_REDIRECT_URI=http://localhost:180/auth/callback
 SESSION_SECRET=your_generated_secret_here
 ```
 
@@ -52,7 +52,7 @@ This will:
 ### 4. Access the Application
 
 Open your browser and go to:
-**http://localhost**
+**http://localhost:180**
 
 ## Docker Commands
 
@@ -160,20 +160,24 @@ docker run --rm -v stravabrowser_strava-data:/data -v $(pwd):/backup alpine sh -
 
 ### Port Already in Use
 
-If port 80 or 3000 is already in use, edit `docker-compose.yml`:
+The application uses:
+- **Frontend**: Port 180 (http://localhost:180)
+- **Backend**: Port 1300 (internal, not directly accessed)
+
+If these ports are already in use, edit `docker-compose.yml`:
 
 ```yaml
 services:
   backend:
     ports:
-      - "3001:3000"  # Change 3000 to another port
+      - "1301:3000"  # Change 1300 to another port
 
   frontend:
     ports:
-      - "8080:80"    # Change 80 to another port
+      - "8080:80"    # Change 180 to another port
 ```
 
-Then update your Strava redirect URI to match the new port.
+Then update your Strava redirect URI and FRONTEND_URL to match the new port.
 
 ### Cannot Connect to Backend
 
@@ -224,6 +228,7 @@ For production deployment:
    FRONTEND_URL=https://yourdomain.com
    STRAVA_REDIRECT_URI=https://yourdomain.com/auth/callback
    ```
+   And update the port mappings in `docker-compose.yml` to use 80/443
 3. **Update Strava settings** with your production domain
 4. **Set up automatic backups** of the database volume
 5. **Use Docker secrets** instead of .env files for sensitive data
@@ -237,14 +242,14 @@ For production deployment:
 │                                          │
 │  ┌────────────────────────────────────┐ │
 │  │  Frontend (nginx:alpine)           │ │
-│  │  Port 80                           │ │
+│  │  Port 180 → 80                     │ │
 │  │  - Serves Vue.js app               │ │
 │  │  - Proxies /api to backend         │ │
 │  └────────────────────────────────────┘ │
 │               ↓ HTTP                     │
 │  ┌────────────────────────────────────┐ │
 │  │  Backend (node:18-alpine)          │ │
-│  │  Port 3000                         │ │
+│  │  Port 1300 → 3000                  │ │
 │  │  - Express server                  │ │
 │  │  - OAuth flow                      │ │
 │  │  - Strava API proxy                │ │

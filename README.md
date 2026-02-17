@@ -26,6 +26,7 @@ The easiest way to run this application is using Docker. See **[DOCKER.md](DOCKE
 cp .env.docker.example backend/.env
 # Edit backend/.env with your Strava credentials
 docker-compose up -d
+# Access at http://localhost:180
 ```
 
 ### 💻 Local Development
