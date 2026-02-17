@@ -44,8 +44,15 @@ router.get('/callback', async (req, res) => {
     req.session.authenticated = true;
     req.session.athleteId = tokens.athlete?.id;
 
-    // Redirect to frontend callback page
-    res.redirect(`${process.env.FRONTEND_URL}/callback?success=true`);
+    // Save session before redirecting
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save error:', err);
+        return res.redirect(`${process.env.FRONTEND_URL}/?error=session_save_failed`);
+      }
+      // Redirect to frontend callback page
+      res.redirect(`${process.env.FRONTEND_URL}/callback?success=true`);
+    });
   } catch (error) {
     console.error('Callback error:', error);
     res.redirect(`${process.env.FRONTEND_URL}/?error=token_exchange_failed`);
