@@ -45,6 +45,8 @@ export function updateCacheMetadata(sessionId, cacheKey, ttl, metadata = null) {
  * Save activities to cache
  */
 export function saveActivities(sessionId, activities) {
+  console.log(`💾 Saving ${activities.length} activities for session: ${sessionId}`);
+
   const insertStmt = db.prepare(`
     INSERT INTO activities (
       id, name, distance, moving_time, elapsed_time, total_elevation_gain,
@@ -67,6 +69,7 @@ export function saveActivities(sessionId, activities) {
       max_heartrate = excluded.max_heartrate,
       gear_id = excluded.gear_id,
       map_summary_polyline = excluded.map_summary_polyline,
+      session_id = excluded.session_id,
       updated_at = strftime('%s', 'now')
   `);
 
@@ -97,7 +100,11 @@ export function saveActivities(sessionId, activities) {
   });
 
   saveMany(activities);
-  console.log(`💾 Cached ${activities.length} activities`);
+
+  // Verify what was saved
+  const countStmt = db.prepare('SELECT COUNT(*) as count FROM activities WHERE session_id = ?');
+  const result = countStmt.get(sessionId);
+  console.log(`✅ Cached ${activities.length} activities, total in DB for this session: ${result.count}`);
 }
 
 /**
