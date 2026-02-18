@@ -14,6 +14,8 @@ graph TB
             Dashboard[Dashboard View]
             Equipment[Equipment View]
             Statistics[Statistics View]
+            Similar[Similar Activities View]
+            Admin[Admin View]
             Callback[OAuth Callback]
         end
 
@@ -34,6 +36,7 @@ graph TB
             ActivityRoutes[Activity Routes<br/>/api/activities]
             EquipmentRoutes[Equipment Routes<br/>/api/equipment]
             StatsRoutes[Statistics Routes<br/>/api/statistics]
+            AdminRoutes[Admin Routes<br/>/api/admin]
         end
 
         subgraph "Services"
@@ -41,6 +44,7 @@ graph TB
             CacheService[Cache Service]
             TokenStorage[Token Storage]
             StravaAuth[Strava Auth Service]
+            WorkoutName[Workout Name Util]
         end
 
         subgraph "Data Layer"
@@ -58,6 +62,8 @@ graph TB
     Router --> Dashboard
     Router --> Equipment
     Router --> Statistics
+    Router --> Similar
+    Router --> Admin
     Router --> Callback
 
     Dashboard --> ActivityList
@@ -67,6 +73,8 @@ graph TB
     Dashboard --> API
     Equipment --> API
     Statistics --> API
+    Similar --> API
+    Admin --> API
     Callback --> API
 
     Store --> UI
@@ -79,6 +87,7 @@ graph TB
     Session --> ActivityRoutes
     Session --> EquipmentRoutes
     Session --> StatsRoutes
+    Session --> AdminRoutes
 
     AuthRoutes --> StravaAuth
     AuthRoutes --> TokenStorage
@@ -90,6 +99,8 @@ graph TB
     EquipmentRoutes --> StravaAPI
 
     StatsRoutes --> CacheService
+    AdminRoutes --> CacheService
+    ActivityRoutes --> WorkoutName
 
     StravaAPI --> TokenStorage
     StravaAuth --> TokenStorage
@@ -106,8 +117,8 @@ graph TB
     classDef external fill:#f59e0b,stroke:#333,stroke-width:2px,color:#fff
     classDef data fill:#ef4444,stroke:#333,stroke-width:2px,color:#fff
 
-    class UI,Router,Store,Home,Dashboard,Equipment,Statistics,Callback,ActivityList,ActivityCard,API frontend
-    class Server,Session,AuthRoutes,ActivityRoutes,EquipmentRoutes,StatsRoutes,StravaAPI,CacheService,TokenStorage,StravaAuth backend
+    class UI,Router,Store,Home,Dashboard,Equipment,Statistics,Similar,Admin,Callback,ActivityList,ActivityCard,API frontend
+    class Server,Session,AuthRoutes,ActivityRoutes,EquipmentRoutes,StatsRoutes,AdminRoutes,StravaAPI,CacheService,TokenStorage,StravaAuth,WorkoutName backend
     class Strava external
     class SQLite data
 ```
@@ -121,6 +132,8 @@ graph TB
 - **Dashboard**: Main view showing paginated activity list with maps
 - **Equipment**: Bike/shoe management with activity totals per gear
 - **Statistics**: Cumulative distance charts by year/week
+- **SimilarActivities**: Groups repeated workouts by extracted name; shows summary stats and per-occurrence details (NP, HR)
+- **Admin**: Cache management (invalidate and force full reload)
 - **Callback**: OAuth redirect handler
 
 #### State Management
@@ -144,7 +157,12 @@ graph TB
 
 - **Activity Routes** (`/api/activities`)
   - `GET /` - Paginated activities (50 per page)
+  - `GET /names` - Unique workout names appearing more than once, sorted by recency
+  - `GET /by-name?name=x` - All activities matching a workout name, newest first
   - Incremental caching (24-hour TTL)
+
+- **Admin Routes** (`/api/admin`)
+  - `POST /invalidate-cache` - Clear activity cache to force full reload
 
 - **Equipment Routes** (`/api/equipment`)
   - `GET /` - List all gear
@@ -165,6 +183,12 @@ graph TB
 - Athlete ID-based caching (survives container restarts)
 - Tables: `activities`, `equipment`, `cache_metadata`
 - TTL: 24 hours for activities and equipment
+- `clearActivitiesCache()` for admin-triggered full reloads
+
+**Workout Name Utility**
+- Strips `"Zwift - "`, `"TrainerRoad: "`, and `"WAHOO SYSTM: "` prefixes
+- Strips trailing `" on <route>"` suffix from TrainerRoad titles
+- Used in activity grouping routes and all frontend name displays
 
 **Token Storage**
 - In-memory Map for session tokens
@@ -182,7 +206,7 @@ graph TB
 **activities**
 - Primary key: `id` (Strava activity ID)
 - Indexed: `session_id`, `gear_id`, `start_date`
-- Stores: distance, time, elevation, speed, heart rate, polyline
+- Stores: distance, time, elevation, speed, heart rate, average_watts, weighted_average_watts, polyline
 
 **equipment**
 - Primary key: `id` (Strava gear ID)

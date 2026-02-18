@@ -24,11 +24,15 @@ frontend/
 │   │   ├── Dashboard.vue       # Main activity browser
 │   │   ├── Equipment.vue       # Bike/shoe management
 │   │   ├── Statistics.vue      # Cumulative distance charts
+│   │   ├── SimilarActivities.vue # Repeated workout comparison
+│   │   ├── Admin.vue           # Cache management
 │   │   └── Callback.vue        # OAuth redirect handler
 │   ├── router/              # Vue Router configuration
 │   │   └── index.js            # Routes with auth guards
 │   ├── stores/              # Pinia stores
 │   │   └── auth.js             # Authentication state
+│   ├── utils/               # Utility functions
+│   │   └── workoutName.js      # Workout name extraction
 │   ├── services/            # API layer
 │   │   └── api.js              # Axios client for backend
 │   ├── App.vue              # Root component
@@ -86,6 +90,14 @@ npm run preview
 - Toggle multiple years for comparison
 - Responsive legends and tooltips
 
+### Similar Activities
+- Groups repeated workouts by extracted name (strips Zwift/TrainerRoad/WAHOO prefixes)
+- Left panel: workout names sorted by most recent occurrence
+- Right panel: summary averages + per-occurrence list with NP and heart rate
+
+### Administration
+- Cache invalidation to force a full reload of all activities from Strava
+
 ## UI Design
 
 ### Layout
@@ -115,6 +127,8 @@ await logout()
 
 // Activities
 await getActivities(page, perPage)
+await getActivityNames()
+await getActivitiesByName(name)
 
 // Equipment
 await getEquipment()
@@ -122,6 +136,9 @@ await getEquipmentActivities(gearId)
 
 // Statistics
 await getWeeklyDistance()
+
+// Admin
+await invalidateCache()
 ```
 
 ## Development Notes

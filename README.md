@@ -29,6 +29,16 @@ A web application to browse your Strava activities with intelligent caching, equ
 - Chart.js powered visualizations
 - Full-width responsive charts
 
+### 🔁 Similar Activities
+- Groups repeated workouts by name for side-by-side comparison
+- Extracts clean workout names from TrainerRoad, WAHOO SYSTM, and Zwift titles
+- Sorted by most recent occurrence
+- Per-workout summary: count, avg distance, avg time, avg speed, avg ascent
+- Per-occurrence list with normalized power and heart rate
+
+### ⚙️ Administration
+- Cache invalidation button to force a full reload of all activities from Strava
+
 ### 💾 Intelligent Caching
 - SQLite database with persistent storage
 - Incremental updates (only fetch new activities)
@@ -139,19 +149,20 @@ stravabrowser/
 ├── backend/              # Node.js/Express backend
 │   ├── src/
 │   │   ├── config/       # Strava API configuration
-│   │   ├── routes/       # API routes (auth, activities, equipment, statistics)
+│   │   ├── routes/       # API routes (auth, activities, equipment, statistics, admin)
 │   │   ├── services/     # Strava API client, caching service
 │   │   ├── middleware/   # Authentication middleware
 │   │   ├── db/           # SQLite database initialization
-│   │   └── utils/        # Token storage utilities
+│   │   └── utils/        # Token storage, workout name extraction
 │   ├── data/             # SQLite database files (gitignored)
 │   └── package.json
 ├── frontend/             # Vue.js 3 frontend
 │   ├── src/
 │   │   ├── components/   # ActivityCard, ActivityList
-│   │   ├── views/        # Dashboard, Equipment, Statistics
+│   │   ├── views/        # Dashboard, Equipment, Statistics, SimilarActivities, Admin
 │   │   ├── router/       # Vue Router with auth guards
 │   │   ├── stores/       # Pinia auth store
+│   │   ├── utils/        # Workout name extraction
 │   │   └── services/     # API service layer
 │   └── package.json
 ├── .claude/              # Claude Code configuration
@@ -170,7 +181,7 @@ stravabrowser/
 - **Survival**: Cache survives container restarts and deployments
 
 ### Cache Tables
-- `activities`: All activity data with polylines
+- `activities`: All activity data including power (average_watts, weighted_average_watts) and polylines
 - `equipment`: Gear details and totals
 - `cache_metadata`: TTL tracking per athlete
 
