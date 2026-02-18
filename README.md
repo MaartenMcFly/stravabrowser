@@ -1,40 +1,72 @@
 # Strava Activity Browser
 
-A web application to browse your Strava activities using secure OAuth 2.0 authentication.
+A web application to browse your Strava activities with intelligent caching, equipment tracking, and statistics visualization using secure OAuth 2.0 authentication.
 
 ## Features
 
+### 🔐 Authentication
 - Secure OAuth 2.0 authentication with Strava
-- Browse your activities with details (distance, duration, type)
-- Server-side token management for security
-- Automatic token refresh
-- Clean, responsive UI
+- Server-side token management and automatic refresh
+- Session-based authentication with athlete ID tracking
+
+### 📊 Activity Management
+- Browse paginated activities (50 per page)
+- Interactive map thumbnails for each activity
+- Click maps to open activity on Strava
+- Smart caching with 24-hour TTL
+- Athlete ID-based cache (survives restarts)
+
+### 🚴 Equipment Tracking
+- View all your bikes and shoes
+- Track total distance per equipment
+- See activities grouped by equipment
+- Activity totals and statistics per gear
+
+### 📈 Statistics & Analytics
+- Cumulative distance charts by year
+- Toggle multiple years for comparison
+- 52-week view (full year progression)
+- Chart.js powered visualizations
+- Full-width responsive charts
+
+### 💾 Intelligent Caching
+- SQLite database with persistent storage
+- Incremental updates (only fetch new activities)
+- Athlete ID-based caching (survives container restarts)
+- 24-hour cache TTL
+- Automatic migration from old sessions
 
 ## Architecture
 
-- **Backend**: Node.js/Express server handling OAuth flow and API proxying
-- **Frontend**: Vue.js 3 + Vite for the user interface
-- **Security**: Session-based authentication with tokens stored server-side
+See **[ARCHITECTURE.md](ARCHITECTURE.md)** for detailed component diagrams and data flows.
+
+- **Backend**: Node.js 20/Express with SQLite caching
+- **Frontend**: Vue.js 3 + Vite with Chart.js
+- **Database**: SQLite with athlete ID-based persistence
+- **Security**: Session-based auth, tokens never exposed to frontend
 
 ## Deployment Options
 
-### 🐳 Docker (Recommended for Production)
+### 🐳 Docker (Recommended)
 The easiest way to run this application is using Docker. See **[DOCKER.md](DOCKER.md)** for complete instructions.
 
 **Quick start:**
 ```bash
 cp .env.docker.example backend/.env
 # Edit backend/.env with your Strava credentials
-docker-compose up -d
+docker compose up -d
 # Access at http://localhost:180
 ```
 
+**Ports:**
+- Frontend: http://localhost:180
+- Backend API: http://localhost:1300 (internal)
+
 ### 💻 Local Development
-For local development without Docker:
 
 ## Prerequisites
 
-- Node.js 18+ installed
+- Node.js 20+ installed
 - Strava API credentials (Client ID and Client Secret)
 
 ## Getting Your Strava API Credentials
@@ -75,30 +107,30 @@ FRONTEND_URL=http://localhost:5173
 NODE_ENV=development
 ```
 
-**Important**: Generate a secure random string for `SESSION_SECRET`. You can use:
+**Important**: Generate a secure random string for `SESSION_SECRET`:
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
 ### 3. Start the Application
 
-From the root directory, you can start both backend and frontend:
+From the root directory:
 
 ```bash
 # Start both servers concurrently
 npm run dev
 
-# Or start them separately in different terminals:
-npm run dev:backend    # Starts backend on http://localhost:3000
-npm run dev:frontend   # Starts frontend on http://localhost:5173
+# Or start them separately:
+npm run dev:backend    # Backend on http://localhost:3000
+npm run dev:frontend   # Frontend on http://localhost:5173
 ```
 
 ### 4. Use the Application
 
 1. Open http://localhost:5173 in your browser
 2. Click "Login with Strava"
-3. Authorize the application on Strava
-4. You'll be redirected back to view your activities
+3. Authorize the application
+4. Browse your activities, equipment, and statistics
 
 ## Project Structure
 
@@ -106,73 +138,88 @@ npm run dev:frontend   # Starts frontend on http://localhost:5173
 stravabrowser/
 ├── backend/              # Node.js/Express backend
 │   ├── src/
-│   │   ├── config/       # Configuration files
-│   │   ├── routes/       # API routes
-│   │   ├── services/     # Business logic
-│   │   ├── middleware/   # Express middleware
-│   │   └── utils/        # Utility functions
+│   │   ├── config/       # Strava API configuration
+│   │   ├── routes/       # API routes (auth, activities, equipment, statistics)
+│   │   ├── services/     # Strava API client, caching service
+│   │   ├── middleware/   # Authentication middleware
+│   │   ├── db/           # SQLite database initialization
+│   │   └── utils/        # Token storage utilities
+│   ├── data/             # SQLite database files (gitignored)
 │   └── package.json
-├── frontend/             # Vue.js frontend
+├── frontend/             # Vue.js 3 frontend
 │   ├── src/
-│   │   ├── components/   # Vue components
-│   │   ├── views/        # Page views
-│   │   ├── router/       # Vue Router config
-│   │   ├── stores/       # Pinia stores
-│   │   └── services/     # API services
+│   │   ├── components/   # ActivityCard, ActivityList
+│   │   ├── views/        # Dashboard, Equipment, Statistics
+│   │   ├── router/       # Vue Router with auth guards
+│   │   ├── stores/       # Pinia auth store
+│   │   └── services/     # API service layer
 │   └── package.json
-└── package.json          # Root workspace config
+├── .claude/              # Claude Code configuration
+├── ARCHITECTURE.md       # System architecture documentation
+├── DOCKER.md            # Docker deployment guide
+└── package.json         # Root workspace config
 ```
 
-## Development
+## Data Persistence
 
-### Backend Development
+### SQLite Caching
+- **Location**: `backend/data/strava_cache.db`
+- **Strategy**: Athlete ID-based (not session-based)
+- **TTL**: 24 hours for activities and equipment
+- **Updates**: Incremental (only fetch new activities)
+- **Survival**: Cache survives container restarts and deployments
 
-```bash
-cd backend
-npm run dev  # Starts with nodemon for auto-reload
-```
-
-### Frontend Development
-
-```bash
-cd frontend
-npm run dev  # Starts Vite dev server
-```
+### Cache Tables
+- `activities`: All activity data with polylines
+- `equipment`: Gear details and totals
+- `cache_metadata`: TTL tracking per athlete
 
 ## Security Notes
 
-- Access tokens are stored server-side only (never sent to frontend)
-- Sessions use secure, httpOnly cookies
-- CORS is configured to only allow the frontend origin
-- Never commit `.env` files to version control
+- Access tokens stored server-side only
+- Sessions use httpOnly cookies
+- CORS restricted to frontend origin
+- Never commit `.env` or database files
 - Use HTTPS in production
+- Settings in `.claude/settings.json` gitignored
 
 ## OAuth Flow
 
 1. User clicks "Login with Strava"
-2. Backend redirects to Strava authorization page
+2. Backend redirects to Strava OAuth page
 3. User authorizes the application
 4. Strava redirects back with authorization code
-5. Backend exchanges code for access/refresh tokens
-6. Tokens stored in server session
+5. Backend exchanges code for tokens
+6. Tokens stored with session ID, athlete ID saved in session
 7. User redirected to dashboard
-8. Frontend fetches activities through backend API
-9. Backend uses stored tokens to call Strava API
+8. Activities cached with athlete ID (not session ID)
+9. Cache survives restarts and future logins
 
 ## Troubleshooting
 
 ### "Cannot connect to backend"
-- Ensure backend is running on port 3000
+- Ensure backend is running on port 3000 (local) or 1300 (Docker)
 - Check backend/.env configuration
 
 ### "OAuth callback error"
 - Verify STRAVA_REDIRECT_URI matches your Strava app settings
-- Check that it's set to `http://localhost:3000/auth/callback`
+- Local: `http://localhost:3000/auth/callback`
+- Docker: `http://localhost:180/auth/callback`
 
 ### "No activities showing"
 - Check browser console for errors
 - Verify your Strava account has activities
-- Check backend logs for API errors
+- Check backend logs: `docker compose logs backend`
+- Database may have old session data - try logging out and back in
+
+### "Activities refetching every restart"
+- Fixed! Cache now uses athlete ID instead of session ID
+- Activities persist across container restarts
+- Only refetches after 24-hour TTL expires
+
+### "Statistics page not full width"
+- Clear browser cache (Cmd+Shift+R)
+- Rebuild Docker containers: `docker compose build --no-cache frontend`
 
 ## License
 

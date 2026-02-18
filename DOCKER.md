@@ -104,26 +104,27 @@ When you want to update to the latest version from GitHub:
 This script will:
 1. Stop the running containers
 2. Pull the latest code from GitHub
-3. Rebuild the containers
-4. Start the services
-5. **Preserve your database** (it's stored in a Docker volume)
+3. Restart the containers (no rebuild required)
+4. **Preserve your database** (it's stored in a Docker volume)
 
-### Manual Update Process
+**Note**: The update script does NOT rebuild containers to save time. If you've made changes to Dockerfiles or need a fresh build, use the manual process below.
 
-If you prefer to update manually:
+### Manual Update Process (with rebuild)
+
+If you need to rebuild the containers:
 
 ```bash
 # Stop containers
-docker-compose down
+docker compose down
 
 # Pull latest code
 git pull origin main
 
 # Rebuild containers
-docker-compose build --no-cache
+docker compose build --no-cache
 
 # Start containers
-docker-compose up -d
+docker compose up -d
 ```
 
 ## Database Persistence
@@ -245,20 +246,23 @@ For production deployment:
 │  │  Port 180 → 80                     │ │
 │  │  - Serves Vue.js app               │ │
 │  │  - Proxies /api to backend         │ │
+│  │  - Proxies /auth to backend        │ │
 │  └────────────────────────────────────┘ │
 │               ↓ HTTP                     │
 │  ┌────────────────────────────────────┐ │
-│  │  Backend (node:18-alpine)          │ │
+│  │  Backend (node:20-alpine)          │ │
 │  │  Port 1300 → 3000                  │ │
 │  │  - Express server                  │ │
 │  │  - OAuth flow                      │ │
-│  │  - Strava API proxy                │ │
+│  │  - Strava API client               │ │
+│  │  - SQLite caching (24h TTL)        │ │
 │  └────────────────────────────────────┘ │
 │               ↓                          │
 │  ┌────────────────────────────────────┐ │
 │  │  Volume: strava-data               │ │
 │  │  /app/data/strava_cache.db         │ │
 │  │  - Persistent SQLite database      │ │
+│  │  - Athlete ID-based caching        │ │
 │  └────────────────────────────────────┘ │
 └─────────────────────────────────────────┘
 ```
