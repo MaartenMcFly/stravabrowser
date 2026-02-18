@@ -39,15 +39,21 @@ case "$MODE" in
         ;;
 esac
 
-# Check if docker compose is available
-if ! command -v docker &> /dev/null; then
-    echo "❌ Error: docker is not installed"
+# Detect docker compose command (V2 plugin vs V1 standalone)
+if docker compose version &> /dev/null 2>&1; then
+    DOCKER_COMPOSE="docker compose"
+elif command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE="docker-compose"
+else
+    echo "❌ Error: neither 'docker compose' nor 'docker-compose' is available"
     exit 1
 fi
 
+echo "ℹ️  Using: $DOCKER_COMPOSE"
+
 # Stop containers
 echo "⏸️  Stopping containers..."
-docker compose down
+$DOCKER_COMPOSE down
 
 # Pull latest code from git
 echo "📥 Pulling latest code from GitHub..."
@@ -58,22 +64,22 @@ if [ "$MODE" != "none" ]; then
     case "$MODE" in
         frontend)
             echo "🔨 Rebuilding frontend container..."
-            docker compose build --no-cache frontend
+            $DOCKER_COMPOSE build --no-cache frontend
             ;;
         backend)
             echo "🔨 Rebuilding backend container..."
-            docker compose build --no-cache backend
+            $DOCKER_COMPOSE build --no-cache backend
             ;;
         all)
             echo "🔨 Rebuilding all containers..."
-            docker compose build --no-cache
+            $DOCKER_COMPOSE build --no-cache
             ;;
     esac
 fi
 
 # Start containers
 echo "🚀 Starting containers..."
-docker compose up -d
+$DOCKER_COMPOSE up -d
 
 # Wait for services to be healthy
 echo "⏳ Waiting for services to be healthy..."
@@ -81,14 +87,14 @@ sleep 5
 
 # Check health
 echo "🏥 Checking service health..."
-docker compose ps
+$DOCKER_COMPOSE ps
 
 # Show logs
 echo ""
 echo "✅ Update complete! Database has been preserved in the 'strava-data' volume."
 echo ""
-echo "📊 View logs with: docker compose logs -f"
-echo "🔍 Check status with: docker compose ps"
-echo "🛑 Stop with: docker compose down"
+echo "📊 View logs with: $DOCKER_COMPOSE logs -f"
+echo "🔍 Check status with: $DOCKER_COMPOSE ps"
+echo "🛑 Stop with: $DOCKER_COMPOSE down"
 echo ""
 echo "Access the app at: http://localhost:180"
