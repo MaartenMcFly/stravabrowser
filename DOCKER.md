@@ -95,23 +95,42 @@ docker-compose down -v
 
 ## Updating the Application
 
-When you want to update to the latest version from GitHub:
+The `update.sh` script provides flexible update options:
 
+### Quick Update (No Rebuild)
 ```bash
 ./update.sh
 ```
+Pulls latest code and restarts containers without rebuilding. **Fastest option** for most updates.
 
-This script will:
-1. Stop the running containers
-2. Pull the latest code from GitHub
-3. Restart the containers (no rebuild required)
-4. **Preserve your database** (it's stored in a Docker volume)
+### Selective Rebuild
+```bash
+# Rebuild only frontend (after UI/Vue changes)
+./update.sh frontend
 
-**Note**: The update script does NOT rebuild containers to save time. If you've made changes to Dockerfiles or need a fresh build, use the manual process below.
+# Rebuild only backend (after Node.js/API changes)
+./update.sh backend
 
-### Manual Update Process (with rebuild)
+# Rebuild all containers (after Dockerfile changes)
+./update.sh all
+```
 
-If you need to rebuild the containers:
+### What the script does:
+1. Stops running containers
+2. Pulls latest code from GitHub
+3. Rebuilds containers (if argument provided)
+4. Restarts all containers
+5. **Always preserves your database** (stored in Docker volume)
+
+### When to use each option:
+- **No argument**: Code changes to Vue/JS files (hot reload in containers)
+- **`frontend`**: Frontend Dockerfile changes, dependency updates
+- **`backend`**: Backend Dockerfile changes, Node.js version change
+- **`all`**: Both Dockerfiles changed, docker-compose.yml modified
+
+### Manual Update Process
+
+If you prefer manual control:
 
 ```bash
 # Stop containers
@@ -120,8 +139,8 @@ docker compose down
 # Pull latest code
 git pull origin main
 
-# Rebuild containers
-docker compose build --no-cache
+# Rebuild specific service
+docker compose build --no-cache frontend  # or backend, or omit for all
 
 # Start containers
 docker compose up -d
