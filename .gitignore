@@ -35,3 +35,6 @@ backend/data/
 # Temporary files
 *.tmp
 .cache/
+
+# Claude Code settings (may contain sensitive info)
+.claude/settings.json
