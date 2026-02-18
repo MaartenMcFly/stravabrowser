@@ -2,6 +2,7 @@ import express from 'express';
 import { getActivities as fetchActivities, getActivity } from '../services/stravaApi.js';
 import { requireAuth } from '../middleware/auth.js';
 import * as cache from '../services/cacheService.js';
+import { extractWorkoutName } from '../utils/workoutName.js';
 
 const router = express.Router();
 
@@ -96,6 +97,56 @@ router.get('/', async (req, res, next) => {
       perPage,
       cached: hasCache,
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/activities/names
+ * Get unique activity names that appear more than once, sorted by count descending
+ */
+router.get('/names', async (req, res, next) => {
+  try {
+    const athleteId = req.session.athleteId?.toString();
+    if (!athleteId) return res.status(401).json({ error: 'Athlete ID not found in session' });
+    const activities = cache.getAllActivities(athleteId);
+    const nameMap = {};
+    activities.forEach(a => {
+      if (!a.name) return;
+      const workoutName = extractWorkoutName(a.name);
+      const key = workoutName.toLowerCase().trim();
+      if (!nameMap[key]) nameMap[key] = { name: workoutName, count: 0, latestDate: null };
+      nameMap[key].count++;
+      const date = a.start_date ? new Date(a.start_date) : null;
+      if (date && (!nameMap[key].latestDate || date > nameMap[key].latestDate)) {
+        nameMap[key].latestDate = date;
+      }
+    });
+    const names = Object.values(nameMap)
+      .filter(g => g.count > 1)
+      .sort((a, b) => b.latestDate - a.latestDate);
+    res.json({ names });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/activities/by-name?name=xxx
+ * Get all activities matching a name, sorted newest first
+ */
+router.get('/by-name', async (req, res, next) => {
+  try {
+    const athleteId = req.session.athleteId?.toString();
+    const name = req.query.name;
+    if (!athleteId) return res.status(401).json({ error: 'Athlete ID not found in session' });
+    if (!name) return res.status(400).json({ error: 'name query parameter required' });
+    const all = cache.getAllActivities(athleteId);
+    const activities = all
+      .filter(a => extractWorkoutName(a.name)?.toLowerCase().trim() === name.toLowerCase().trim())
+      .sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
+    res.json({ activities, name });
   } catch (error) {
     next(error);
   }

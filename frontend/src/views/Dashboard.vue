@@ -16,6 +16,18 @@
             </svg>
             Equipment
           </button>
+          <button @click="router.push('/similar')" class="nav-button">
+            <svg viewBox="0 0 24 24" fill="currentColor" class="button-icon">
+              <path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/>
+            </svg>
+            Similar
+          </button>
+          <button @click="router.push('/admin')" class="nav-button">
+            <svg viewBox="0 0 24 24" fill="currentColor" class="button-icon">
+              <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12 3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.92c.04-.3.07-.62.07-.93s-.03-.64-.07-1l2.04-1.56c.18-.14.23-.39.12-.6l-1.93-3.32c-.12-.22-.37-.3-.6-.22l-2.4 1c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.42-.5-.42h-3.86c-.26 0-.46.18-.5.42l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.4-1c-.22-.08-.48 0-.6.22l-1.93 3.32c-.12.21-.07.46.12.6l2.04 1.56c-.04.36-.07.7-.07 1s.03.64.07 1l-2.04 1.56c-.18.14-.23.39-.12.6l1.93 3.32c.12.22.37.3.6.22l2.4-1c.5.38 1.03.7 1.62.94l.36 2.54c.04.24.24.42.5.42h3.86c.26 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.4 1c.22.08.48 0 .6-.22l1.93-3.32c.12-.21.07-.46-.12-.6l-2.04-1.56z"/>
+            </svg>
+            Admin
+          </button>
           <span v-if="authStore.athlete" class="user-name">
             {{ authStore.athlete.firstname }} {{ authStore.athlete.lastname }}
           </span>

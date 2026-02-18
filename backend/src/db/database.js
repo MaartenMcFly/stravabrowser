@@ -42,6 +42,8 @@ const initSchema = () => {
       average_cadence REAL,
       average_heartrate REAL,
       max_heartrate REAL,
+      average_watts REAL,
+      weighted_average_watts REAL,
       gear_id TEXT,
       map_summary_polyline TEXT,
       session_id TEXT,
@@ -81,6 +83,15 @@ const initSchema = () => {
     CREATE INDEX IF NOT EXISTS idx_equipment_session ON equipment(session_id);
     CREATE INDEX IF NOT EXISTS idx_cache_session ON cache_metadata(session_id);
   `);
+
+  // Migrations: add columns that may not exist in older databases
+  const migrations = [
+    'ALTER TABLE activities ADD COLUMN average_watts REAL',
+    'ALTER TABLE activities ADD COLUMN weighted_average_watts REAL',
+  ];
+  for (const sql of migrations) {
+    try { db.exec(sql); } catch (_) { /* column already exists */ }
+  }
 
   console.log('✅ Database initialized at:', dbPath);
 };

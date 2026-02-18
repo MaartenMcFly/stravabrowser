@@ -6,6 +6,8 @@ import Dashboard from '../views/Dashboard.vue';
 import Callback from '../views/Callback.vue';
 import Equipment from '../views/Equipment.vue';
 import Statistics from '../views/Statistics.vue';
+import SimilarActivities from '../views/SimilarActivities.vue';
+import Admin from '../views/Admin.vue';
 
 const routes = [
   {
@@ -30,6 +32,18 @@ const routes = [
     path: '/statistics',
     name: 'Statistics',
     component: Statistics,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/similar',
+    name: 'Similar',
+    component: SimilarActivities,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/admin',
+    name: 'Admin',
+    component: Admin,
     meta: { requiresAuth: true },
   },
   {

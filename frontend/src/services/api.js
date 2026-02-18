@@ -87,4 +87,28 @@ export async function getEquipmentActivities(equipmentId) {
   }
 }
 
+/**
+ * Invalidate the activity cache, forcing a full reload on next dashboard visit
+ */
+export async function invalidateCache() {
+  const response = await apiClient.post('/admin/invalidate-cache');
+  return response.data;
+}
+
+/**
+ * Get unique activity names that appear more than once
+ */
+export async function getActivityNames() {
+  const response = await apiClient.get('/activities/names');
+  return response.data;
+}
+
+/**
+ * Get all activities matching a given name
+ */
+export async function getActivitiesByName(name) {
+  const response = await apiClient.get('/activities/by-name', { params: { name } });
+  return response.data;
+}
+
 export default apiClient;

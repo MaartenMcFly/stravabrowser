@@ -2,7 +2,7 @@
   <div class="activity-card">
     <div class="activity-header">
       <div class="header-text">
-        <h3 class="activity-name">{{ activity.name }}</h3>
+        <h3 class="activity-name">{{ extractWorkoutName(activity.name) }}</h3>
         <span class="activity-type" :class="`type-${activity.sport_type?.toLowerCase() || 'other'}`">
           {{ activity.sport_type || activity.type }}
         </span>
@@ -65,6 +65,7 @@
 <script setup>
 import { computed } from 'vue';
 import { decodePolyline, polylineToSvgPath } from '../utils/polyline.js';
+import { extractWorkoutName } from '../utils/workoutName.js';
 
 const props = defineProps({
   activity: {
