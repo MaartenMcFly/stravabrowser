@@ -146,7 +146,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { getActivityNames, getActivitiesByName } from '../services/api';
+import { getActivities, getActivityNames, getActivitiesByName } from '../services/api';
 
 const router = useRouter();
 
@@ -182,6 +182,8 @@ async function fetchNames() {
   try {
     isLoading.value = true;
     error.value = '';
+    // Trigger the same cache check/incremental update that the dashboard does
+    await getActivities(1, 1);
     const response = await getActivityNames();
     names.value = response.names;
   } catch (err) {

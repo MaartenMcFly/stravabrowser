@@ -24,28 +24,19 @@ router.get('/', async (req, res, next) => {
     // Migrate any old equipment cache to athlete-based
     cache.migrateActivitiesToAthlete(sessionId, athleteId);
 
-    // Check if we have cached equipment
-    const cacheKey = `equipment:${athleteId}`;
-    const isCacheValid = cache.isCacheValid(athleteId, cacheKey);
+    // Equipment never changes — serve from cache if present, fetch once otherwise
+    let gear = cache.getEquipment(athleteId);
 
-    let gear;
-
-    if (isCacheValid) {
+    if (gear.length > 0) {
       console.log('✅ Serving equipment from cache');
-      gear = cache.getEquipment(athleteId);
     } else {
-      console.log('🔄 Fetching equipment from Strava API (cached for 24h)');
-
-      // Fetch equipment from Strava
+      console.log('🔄 Fetching equipment from Strava API (cached permanently)');
       gear = await getGear(sessionId);
-
-      // Save to cache
       cache.saveEquipment(athleteId, gear);
-      cache.updateCacheMetadata(athleteId, cacheKey, cache.TTL.EQUIPMENT);
     }
 
     console.log(`Found ${gear.length} piece(s) of equipment`);
-    res.json({ gear, cached: isCacheValid });
+    res.json({ gear, cached: gear.length > 0 });
   } catch (error) {
     next(error);
   }
@@ -88,7 +79,6 @@ router.get('/:id', async (req, res, next) => {
 router.get('/:id/activities', async (req, res, next) => {
   try {
     const athleteId = req.session.athleteId?.toString();
-    const sessionId = req.session.id;
     const gearId = req.params.id;
 
     if (!athleteId) {
