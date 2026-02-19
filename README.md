@@ -43,7 +43,8 @@ A web application to browse your Strava activities with intelligent caching, equ
 - SQLite database with persistent storage
 - Incremental updates (only fetch new activities)
 - Athlete ID-based caching (survives container restarts)
-- 24-hour cache TTL
+- Activities: 24-hour TTL with incremental sync
+- Equipment: cached permanently on first fetch (no TTL)
 - Automatic migration from old sessions
 
 ## Architecture

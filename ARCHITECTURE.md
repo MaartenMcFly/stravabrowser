@@ -182,7 +182,8 @@ graph TB
 - SQLite-based persistence
 - Athlete ID-based caching (survives container restarts)
 - Tables: `activities`, `equipment`, `cache_metadata`
-- TTL: 24 hours for activities and equipment
+- Activities: 24-hour TTL with incremental updates (only new activities fetched)
+- Equipment: cached permanently on first fetch (no TTL — gear rarely changes)
 - `clearActivitiesCache()` for admin-triggered full reloads
 
 **Workout Name Utility**
@@ -231,12 +232,18 @@ graph TB
 1. Frontend requests `/api/activities?page=1&per_page=50`
 2. Backend checks cache validity (24-hour TTL)
 3. **Cache hit**: Return cached activities from SQLite
-4. **Cache miss**:
+4. **Cache miss (first load)**:
    - Fetch from Strava API (up to 2000 activities)
    - Store in SQLite with athlete ID
    - Update cache metadata
    - Return activities
-5. Frontend renders activity cards with maps
+5. **TTL expired (incremental update)**:
+   - Fetch only activities newer than most recent cached date
+   - Append new activities to SQLite
+   - Update cache metadata
+6. Frontend renders activity cards with maps
+
+Note: the Similar Activities and Statistics pages also trigger this flow on mount to ensure the cache is up to date.
 
 ### Statistics Flow
 1. Frontend requests `/api/statistics/weekly-distance`
