@@ -8,58 +8,7 @@
     </header>
 
     <main class="main">
-      <!-- Card 1: FTP History -->
-      <div class="card">
-        <h2 class="card-title">FTP History</h2>
-
-        <p v-if="stravaFtp" class="ftp-info">
-          Current FTP from Strava: <strong>{{ stravaFtp }}w</strong>
-          <span class="ftp-hint">(re-authorise to refresh)</span>
-        </p>
-
-        <table class="ftp-table" v-if="ftpHistory.length > 0">
-          <thead>
-            <tr>
-              <th>Valid From</th>
-              <th>FTP (W)</th>
-              <th>LTHR (bpm)</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="entry in ftpHistory" :key="entry.id">
-              <td>{{ entry.valid_from }}</td>
-              <td>{{ entry.ftp }}</td>
-              <td>{{ entry.lthr ?? '—' }}</td>
-              <td>
-                <button class="delete-btn" @click="handleDeleteFtp(entry.id)">Delete</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <p v-else class="empty-hint">No FTP entries yet.</p>
-
-        <form class="ftp-form" @submit.prevent="handleAddFtp">
-          <h3 class="form-title">Add Entry</h3>
-          <div class="form-row">
-            <label>
-              Date
-              <input type="date" v-model="newFtp.valid_from" required />
-            </label>
-            <label>
-              FTP (W)
-              <input type="number" v-model="newFtp.ftp" min="1" required placeholder="e.g. 300" />
-            </label>
-            <label>
-              LTHR (opt.)
-              <input type="number" v-model="newFtp.lthr" min="1" placeholder="e.g. 168" />
-            </label>
-            <button type="submit" class="add-btn">Add</button>
-          </div>
-        </form>
-      </div>
-
-      <!-- Card 2: PMC Chart -->
+      <!-- Card 1: PMC Chart -->
       <div class="card">
         <div class="card-header-row">
           <h2 class="card-title">Performance Management Chart</h2>
@@ -111,6 +60,57 @@
             <canvas ref="hrvCanvas"></canvas>
           </div>
         </div>
+      </div>
+
+      <!-- Card 3: FTP History -->
+      <div class="card">
+        <h2 class="card-title">FTP History</h2>
+
+        <p v-if="stravaFtp" class="ftp-info">
+          Current FTP from Strava: <strong>{{ stravaFtp }}w</strong>
+          <span class="ftp-hint">(re-authorise to refresh)</span>
+        </p>
+
+        <table class="ftp-table" v-if="ftpHistory.length > 0">
+          <thead>
+            <tr>
+              <th>Valid From</th>
+              <th>FTP (W)</th>
+              <th>LTHR (bpm)</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="entry in ftpHistory" :key="entry.id">
+              <td>{{ entry.valid_from }}</td>
+              <td>{{ entry.ftp }}</td>
+              <td>{{ entry.lthr ?? '—' }}</td>
+              <td>
+                <button class="delete-btn" @click="handleDeleteFtp(entry.id)">Delete</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-else class="empty-hint">No FTP entries yet.</p>
+
+        <form class="ftp-form" @submit.prevent="handleAddFtp">
+          <h3 class="form-title">Add Entry</h3>
+          <div class="form-row">
+            <label>
+              Date
+              <input type="date" v-model="newFtp.valid_from" required />
+            </label>
+            <label>
+              FTP (W)
+              <input type="number" v-model="newFtp.ftp" min="1" required placeholder="e.g. 300" />
+            </label>
+            <label>
+              LTHR (opt.)
+              <input type="number" v-model="newFtp.lthr" min="1" placeholder="e.g. 168" />
+            </label>
+            <button type="submit" class="add-btn">Add</button>
+          </div>
+        </form>
       </div>
     </main>
   </div>
