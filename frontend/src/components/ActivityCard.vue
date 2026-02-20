@@ -16,12 +16,31 @@
         title="View on Strava"
       >
         <svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
-          <rect width="200" height="150" fill="#f0f0f0"/>
+          <rect width="200" height="150" fill="#e8e0d8"/>
+          <image
+            v-for="(tile, i) in mapConfig.tiles"
+            :key="i"
+            :href="tile.url"
+            :x="tile.x"
+            :y="tile.y"
+            width="256"
+            height="256"
+          />
+          <!-- White halo for contrast against map tiles -->
           <path
-            :d="svgPath"
+            :d="mapConfig.path"
+            fill="none"
+            stroke="white"
+            stroke-width="4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            opacity="0.9"
+          />
+          <path
+            :d="mapConfig.path"
             fill="none"
             stroke="#667eea"
-            stroke-width="3"
+            stroke-width="2.5"
             stroke-linecap="round"
             stroke-linejoin="round"
           />
@@ -81,7 +100,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { decodePolyline, polylineToSvgPath } from '../utils/polyline.js';
+import { decodePolyline, getMapConfig } from '../utils/polyline.js';
 import { extractWorkoutName } from '../utils/workoutName.js';
 import EditActivityModal from './EditActivityModal.vue';
 
@@ -105,12 +124,10 @@ const hasMap = computed(() => {
   return props.activity.map && props.activity.map.summary_polyline;
 });
 
-const svgPath = computed(() => {
-  if (!hasMap.value) return '';
-
-  const polyline = props.activity.map.summary_polyline;
-  const points = decodePolyline(polyline);
-  return polylineToSvgPath(points);
+const mapConfig = computed(() => {
+  if (!hasMap.value) return { tiles: [], path: '' };
+  const points = decodePolyline(props.activity.map.summary_polyline);
+  return getMapConfig(points, 200, 150) || { tiles: [], path: '' };
 });
 
 const stravaUrl = computed(() => {
