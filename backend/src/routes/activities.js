@@ -1,5 +1,5 @@
 import express from 'express';
-import { getActivities as fetchActivities, getActivity } from '../services/stravaApi.js';
+import { getActivities as fetchActivities, getActivity, updateActivity } from '../services/stravaApi.js';
 import { requireAuth } from '../middleware/auth.js';
 import * as cache from '../services/cacheService.js';
 import { extractWorkoutName } from '../utils/workoutName.js';
@@ -177,6 +177,44 @@ router.get('/:id', async (req, res, next) => {
         error: 'Not Found',
         message: 'Activity not found',
       });
+    }
+    next(error);
+  }
+});
+
+/**
+ * PUT /api/activities/:id
+ * Update activity name, description and gear on Strava and sync the cache
+ */
+router.put('/:id', async (req, res, next) => {
+  try {
+    const sessionId = req.session.id;
+    const athleteId = req.session.athleteId?.toString();
+    const activityId = req.params.id;
+    const { name, description, gear_id } = req.body;
+
+    if (!activityId || isNaN(activityId)) {
+      return res.status(400).json({ error: 'Invalid activity ID' });
+    }
+
+    // Update on Strava
+    const updated = await updateActivity(sessionId, activityId, {
+      name,
+      description,
+      gear_id: gear_id || 'none',
+    });
+
+    // Keep cache in sync
+    cache.updateActivityCache(athleteId, activityId, {
+      name: updated.name,
+      description: updated.description,
+      gear_id: updated.gear_id,
+    });
+
+    res.json(updated);
+  } catch (error) {
+    if (error.response?.status === 404) {
+      return res.status(404).json({ error: 'Activity not found' });
     }
     next(error);
   }

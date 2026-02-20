@@ -52,9 +52,9 @@ export function saveActivities(sessionId, activities) {
       id, name, distance, moving_time, elapsed_time, total_elevation_gain,
       type, sport_type, start_date, start_date_local, timezone,
       average_speed, max_speed, average_cadence, average_heartrate, max_heartrate,
-      average_watts, weighted_average_watts,
+      average_watts, weighted_average_watts, description,
       gear_id, map_summary_polyline, session_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       name = excluded.name,
       distance = excluded.distance,
@@ -70,6 +70,7 @@ export function saveActivities(sessionId, activities) {
       max_heartrate = excluded.max_heartrate,
       average_watts = excluded.average_watts,
       weighted_average_watts = excluded.weighted_average_watts,
+      description = excluded.description,
       gear_id = excluded.gear_id,
       map_summary_polyline = excluded.map_summary_polyline,
       session_id = excluded.session_id,
@@ -97,6 +98,7 @@ export function saveActivities(sessionId, activities) {
         activity.max_heartrate,
         activity.average_watts ?? null,
         activity.weighted_average_watts ?? null,
+        activity.description ?? null,
         activity.gear_id,
         activity.map?.summary_polyline,
         sessionId
@@ -221,6 +223,17 @@ export function getEquipmentById(sessionId, equipmentId) {
     primary: gear.primary_gear === 1,
     retired: gear.retired === 1,
   };
+}
+
+/**
+ * Update editable fields of a cached activity after a Strava update
+ */
+export function updateActivityCache(athleteId, activityId, { name, description, gear_id }) {
+  db.prepare(`
+    UPDATE activities
+    SET name = ?, description = ?, gear_id = ?, updated_at = strftime('%s', 'now')
+    WHERE id = ? AND session_id = ?
+  `).run(name, description ?? null, gear_id ?? null, activityId.toString(), athleteId);
 }
 
 /**

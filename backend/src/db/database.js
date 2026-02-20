@@ -44,6 +44,7 @@ const initSchema = () => {
       max_heartrate REAL,
       average_watts REAL,
       weighted_average_watts REAL,
+      description TEXT,
       gear_id TEXT,
       map_summary_polyline TEXT,
       session_id TEXT,
@@ -88,6 +89,7 @@ const initSchema = () => {
   const migrations = [
     'ALTER TABLE activities ADD COLUMN average_watts REAL',
     'ALTER TABLE activities ADD COLUMN weighted_average_watts REAL',
+    'ALTER TABLE activities ADD COLUMN description TEXT',
   ];
   for (const sql of migrations) {
     try { db.exec(sql); } catch (_) { /* column already exists */ }

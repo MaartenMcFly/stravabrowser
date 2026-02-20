@@ -220,6 +220,21 @@ export async function getGear(sessionId) {
 }
 
 /**
+ * Update an activity on Strava (name, description, gear_id)
+ */
+export async function updateActivity(sessionId, activityId, data) {
+  const client = createStravaClient(sessionId);
+
+  try {
+    const response = await client.put(`/activities/${activityId}`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Update activity error:', error.response?.data || error.message);
+    throw error;
+  }
+}
+
+/**
  * Get detailed gear information
  */
 export async function getGearDetails(sessionId, gearId) {

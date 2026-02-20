@@ -88,6 +88,14 @@ export async function getEquipmentActivities(equipmentId) {
 }
 
 /**
+ * Update activity name, description and gear on Strava
+ */
+export async function updateActivity(activityId, data) {
+  const response = await apiClient.put(`/activities/${activityId}`, data);
+  return response.data;
+}
+
+/**
  * Invalidate the activity cache, forcing a full reload on next dashboard visit
  */
 export async function invalidateCache() {

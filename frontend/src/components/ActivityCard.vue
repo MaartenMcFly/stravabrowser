@@ -63,14 +63,27 @@
 
     <div class="activity-footer">
       <span class="activity-date">{{ formatDate(activity.start_date) }}</span>
+      <button @click="showEdit = true" class="edit-button" title="Edit activity">
+        <svg viewBox="0 0 24 24" fill="currentColor" class="edit-icon">
+          <path d="M20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/>
+        </svg>
+      </button>
     </div>
   </div>
+
+  <EditActivityModal
+    v-if="showEdit"
+    :activity="activity"
+    @cancel="showEdit = false"
+    @saved="onSaved"
+  />
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { decodePolyline, polylineToSvgPath } from '../utils/polyline.js';
 import { extractWorkoutName } from '../utils/workoutName.js';
+import EditActivityModal from './EditActivityModal.vue';
 
 const props = defineProps({
   activity: {
@@ -78,6 +91,15 @@ const props = defineProps({
     required: true,
   },
 });
+
+const emit = defineEmits(['updated']);
+
+const showEdit = ref(false);
+
+function onSaved(updated) {
+  showEdit.value = false;
+  emit('updated', updated);
+}
 
 const hasMap = computed(() => {
   return props.activity.map && props.activity.map.summary_polyline;
@@ -288,5 +310,28 @@ function formatDate(dateString) {
 .activity-date {
   font-size: 0.875rem;
   color: #6b7280;
+}
+
+.edit-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #9ca3af;
+  transition: color 0.2s, background 0.2s;
+}
+
+.edit-button:hover {
+  color: #667eea;
+  background: #eef2ff;
+}
+
+.edit-icon {
+  width: 18px;
+  height: 18px;
 }
 </style>

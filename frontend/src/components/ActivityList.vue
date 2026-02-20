@@ -20,6 +20,7 @@
         v-for="activity in activities"
         :key="activity.id"
         :activity="activity"
+        @updated="onActivityUpdated"
       />
     </div>
 
@@ -42,6 +43,13 @@ import ActivityCard from './ActivityCard.vue';
 
 const activities = ref([]);
 const isLoading = ref(true);
+
+function onActivityUpdated(updated) {
+  const idx = activities.value.findIndex(a => a.id === updated.id);
+  if (idx !== -1) {
+    activities.value[idx] = { ...activities.value[idx], ...updated };
+  }
+}
 const isLoadingMore = ref(false);
 const error = ref('');
 const currentPage = ref(1);
