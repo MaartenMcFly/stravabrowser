@@ -51,6 +51,11 @@ fi
 
 echo "ℹ️  Using: $DOCKER_COMPOSE"
 
+# Enable BuildKit so --mount=type=cache in the backend Dockerfile is honoured.
+# This keeps the npm download cache across builds, meaning better-sqlite3's
+# pre-built binary is reused and never recompiled from source.
+export DOCKER_BUILDKIT=1
+
 # Stop containers
 echo "⏸️  Stopping containers..."
 $DOCKER_COMPOSE down
