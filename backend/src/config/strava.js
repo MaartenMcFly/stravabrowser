@@ -12,7 +12,7 @@ export const stravaConfig = {
   apiBaseUrl: 'https://www.strava.com/api/v3',
 
   // OAuth scopes
-  scope: 'read,activity:read_all,activity:write',
+  scope: 'read,activity:read_all,activity:write,profile:read_all',
 };
 
 // Validate required environment variables

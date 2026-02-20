@@ -53,8 +53,9 @@ export function saveActivities(sessionId, activities) {
       type, sport_type, start_date, start_date_local, timezone,
       average_speed, max_speed, average_cadence, average_heartrate, max_heartrate,
       average_watts, weighted_average_watts, description,
-      gear_id, map_summary_polyline, session_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      gear_id, map_summary_polyline, session_id,
+      kilojoules, device_watts
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       name = excluded.name,
       distance = excluded.distance,
@@ -74,6 +75,8 @@ export function saveActivities(sessionId, activities) {
       gear_id = excluded.gear_id,
       map_summary_polyline = excluded.map_summary_polyline,
       session_id = excluded.session_id,
+      kilojoules = excluded.kilojoules,
+      device_watts = excluded.device_watts,
       updated_at = strftime('%s', 'now')
   `);
 
@@ -101,7 +104,9 @@ export function saveActivities(sessionId, activities) {
         activity.description ?? null,
         activity.gear_id,
         activity.map?.summary_polyline,
-        sessionId
+        sessionId,
+        activity.kilojoules ?? null,
+        activity.device_watts ? 1 : 0
       );
     }
   });
@@ -318,6 +323,142 @@ export function getCacheStats(sessionId) {
       expiresAt: new Date(m.expires_at * 1000).toISOString(),
     })),
   };
+}
+
+/**
+ * Save / update athlete profile (FTP, weight, max HR)
+ */
+export function saveAthlete(athleteId, { ftp, max_heartrate, weight }) {
+  db.prepare(`
+    INSERT INTO athletes (id, ftp, max_heartrate, weight, updated_at)
+    VALUES (?, ?, ?, ?, strftime('%s', 'now'))
+    ON CONFLICT(id) DO UPDATE SET
+      ftp = COALESCE(excluded.ftp, ftp),
+      max_heartrate = COALESCE(excluded.max_heartrate, max_heartrate),
+      weight = COALESCE(excluded.weight, weight),
+      updated_at = strftime('%s', 'now')
+  `).run(athleteId, ftp ?? null, max_heartrate ?? null, weight ?? null);
+}
+
+/**
+ * Get stored athlete profile
+ */
+export function getAthleteProfile(athleteId) {
+  return db.prepare('SELECT ftp, max_heartrate, weight FROM athletes WHERE id = ?').get(athleteId) || null;
+}
+
+/**
+ * Get FTP history for an athlete, newest first
+ */
+export function getFtpHistory(athleteId) {
+  return db.prepare('SELECT * FROM ftp_history WHERE athlete_id = ? ORDER BY valid_from DESC').all(athleteId);
+}
+
+/**
+ * Add a new FTP entry
+ */
+export function addFtpEntry(athleteId, { ftp, lthr, valid_from }) {
+  const result = db.prepare(
+    'INSERT INTO ftp_history (athlete_id, ftp, lthr, valid_from) VALUES (?, ?, ?, ?)'
+  ).run(athleteId, ftp, lthr ?? null, valid_from);
+  return result.lastInsertRowid;
+}
+
+/**
+ * Delete an FTP entry (scoped to athlete)
+ */
+export function deleteFtpEntry(id, athleteId) {
+  db.prepare('DELETE FROM ftp_history WHERE id = ? AND athlete_id = ?').run(id, athleteId);
+}
+
+/**
+ * Get the FTP valid for a given date (latest entry where valid_from <= dateStr)
+ */
+export function getFtpForDate(athleteId, dateStr) {
+  return db.prepare(
+    'SELECT * FROM ftp_history WHERE athlete_id = ? AND valid_from <= ? ORDER BY valid_from DESC LIMIT 1'
+  ).get(athleteId, dateStr) || null;
+}
+
+/**
+ * Save Whoop OAuth tokens
+ */
+export function saveWhoopTokens(athleteId, { access_token, refresh_token, expires_at }) {
+  db.prepare(`
+    INSERT INTO whoop_tokens (athlete_id, access_token, refresh_token, expires_at, updated_at)
+    VALUES (?, ?, ?, ?, strftime('%s', 'now'))
+    ON CONFLICT(athlete_id) DO UPDATE SET
+      access_token = excluded.access_token,
+      refresh_token = excluded.refresh_token,
+      expires_at = excluded.expires_at,
+      updated_at = strftime('%s', 'now')
+  `).run(athleteId, access_token, refresh_token ?? null, expires_at ?? null);
+}
+
+/**
+ * Get Whoop tokens for an athlete
+ */
+export function getWhoopTokens(athleteId) {
+  return db.prepare('SELECT * FROM whoop_tokens WHERE athlete_id = ?').get(athleteId) || null;
+}
+
+/**
+ * Delete Whoop tokens for an athlete
+ */
+export function deleteWhoopTokens(athleteId) {
+  db.prepare('DELETE FROM whoop_tokens WHERE athlete_id = ?').run(athleteId);
+}
+
+/**
+ * Upsert Whoop recovery records
+ */
+export function saveWhoopRecoveries(athleteId, recoveries) {
+  const stmt = db.prepare(`
+    INSERT INTO whoop_recoveries (id, athlete_id, date, score, hrv_rmssd, resting_heart_rate, spo2, skin_temp)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      score = excluded.score,
+      hrv_rmssd = excluded.hrv_rmssd,
+      resting_heart_rate = excluded.resting_heart_rate,
+      spo2 = excluded.spo2,
+      skin_temp = excluded.skin_temp
+  `);
+  const insert = db.transaction((rows) => {
+    for (const r of rows) {
+      stmt.run(r.id, athleteId, r.date, r.score ?? null, r.hrv_rmssd ?? null,
+        r.resting_heart_rate ?? null, r.spo2 ?? null, r.skin_temp ?? null);
+    }
+  });
+  insert(recoveries);
+}
+
+/**
+ * Upsert Whoop cycle records
+ */
+export function saveWhoopCycles(athleteId, cycles) {
+  const stmt = db.prepare(`
+    INSERT INTO whoop_cycles (id, athlete_id, date, strain, kilojoule, average_heart_rate, max_heart_rate)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      strain = excluded.strain,
+      kilojoule = excluded.kilojoule,
+      average_heart_rate = excluded.average_heart_rate,
+      max_heart_rate = excluded.max_heart_rate
+  `);
+  const insert = db.transaction((rows) => {
+    for (const r of rows) {
+      stmt.run(r.id, athleteId, r.date, r.strain ?? null, r.kilojoule ?? null,
+        r.average_heart_rate ?? null, r.max_heart_rate ?? null);
+    }
+  });
+  insert(cycles);
+}
+
+/**
+ * Get all Whoop recovery records for an athlete, oldest first
+ */
+export function getWhoopRecoveries(athleteId) {
+  return db.prepare('SELECT * FROM whoop_recoveries WHERE athlete_id = ? ORDER BY date ASC').all(athleteId);
 }
 
 export { TTL };

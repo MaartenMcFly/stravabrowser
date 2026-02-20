@@ -1,6 +1,8 @@
 import express from 'express';
 import { generateAuthUrl, exchangeCodeForTokens } from '../services/stravaAuth.js';
 import { tokenStorage } from '../utils/tokenStorage.js';
+import { getAthlete } from '../services/stravaApi.js';
+import * as cache from '../services/cacheService.js';
 
 const router = express.Router();
 
@@ -42,6 +44,16 @@ router.get('/callback', async (req, res) => {
     // Mark session as authenticated
     req.session.authenticated = true;
     req.session.athleteId = tokens.athlete?.id;
+
+    // Fetch and cache athlete profile (FTP, weight) — non-fatal
+    try {
+      const sessionId = req.session.id;
+      const profile = await getAthlete(sessionId);
+      const athleteId = tokens.athlete?.id?.toString();
+      if (athleteId && profile) {
+        cache.saveAthlete(athleteId, { ftp: profile.ftp, weight: profile.weight });
+      }
+    } catch (_) { /* non-fatal */ }
 
     // Save session before redirecting
     req.session.save((err) => {

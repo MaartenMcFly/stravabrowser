@@ -8,6 +8,10 @@ import activitiesRoutes from './routes/activities.js';
 import equipmentRoutes from './routes/equipment.js';
 import statisticsRoutes from './routes/statistics.js';
 import adminRoutes from './routes/admin.js';
+import athleteRoutes from './routes/athlete.js';
+import ftpHistoryRoutes from './routes/ftpHistory.js';
+import fitnessRoutes from './routes/fitness.js';
+import whoopRoutes from './routes/whoop.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 // Load environment variables
@@ -65,6 +69,10 @@ app.use('/api/activities', activitiesRoutes);
 app.use('/api/equipment', equipmentRoutes);
 app.use('/api/statistics', statisticsRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/athlete', athleteRoutes);
+app.use('/api/ftp-history', ftpHistoryRoutes);
+app.use('/api/fitness', fitnessRoutes);
+app.use('/whoop', whoopRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

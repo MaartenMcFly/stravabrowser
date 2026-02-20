@@ -8,6 +8,7 @@ import Equipment from '../views/Equipment.vue';
 import Statistics from '../views/Statistics.vue';
 import SimilarActivities from '../views/SimilarActivities.vue';
 import Admin from '../views/Admin.vue';
+import Fitness from '../views/Fitness.vue';
 
 const routes = [
   {
@@ -44,6 +45,12 @@ const routes = [
     path: '/admin',
     name: 'Admin',
     component: Admin,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/fitness',
+    name: 'Fitness',
+    component: Fitness,
     meta: { requiresAuth: true },
   },
   {
