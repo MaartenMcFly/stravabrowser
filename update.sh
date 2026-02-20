@@ -72,7 +72,10 @@ if [ "$MODE" != "none" ]; then
             ;;
         all)
             echo "🔨 Rebuilding all containers..."
-            $DOCKER_COMPOSE build --no-cache
+            # Frontend: always clean (no native compilation, fast)
+            # Backend: use layer cache to avoid recompiling better-sqlite3 from source
+            $DOCKER_COMPOSE build --no-cache frontend
+            $DOCKER_COMPOSE build backend
             ;;
     esac
 fi
