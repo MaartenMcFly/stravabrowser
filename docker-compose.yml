@@ -44,10 +44,11 @@ services:
     networks:
       - strava-network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      test: ["CMD", "sh", "-c", "test -f /var/run/nginx.pid && kill -0 $(cat /var/run/nginx.pid)"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 10s
 
 networks:
   strava-network:

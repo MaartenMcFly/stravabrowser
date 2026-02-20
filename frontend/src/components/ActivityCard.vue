@@ -54,6 +54,11 @@
         <span class="detail-label">Avg Speed</span>
         <span class="detail-value">{{ formatSpeed(activity.average_speed) }}</span>
       </div>
+
+      <div class="detail-item" v-if="activity.weighted_average_watts">
+        <span class="detail-label">NP</span>
+        <span class="detail-value">{{ activity.weighted_average_watts }}W</span>
+      </div>
     </div>
 
     <div class="activity-footer">
