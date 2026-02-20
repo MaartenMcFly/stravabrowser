@@ -128,6 +128,13 @@ Pulls latest code and restarts containers without rebuilding. **Fastest option**
 - **`backend`**: Backend Dockerfile changes, Node.js version change
 - **`all`**: Both Dockerfiles changed, docker-compose.yml modified
 
+### Build caching — no SQLite recompilation
+
+The backend Dockerfile uses a BuildKit npm cache mount (`--mount=type=cache,target=/root/.npm`).
+The `update.sh` script sets `DOCKER_BUILDKIT=1` to activate this.
+
+This means `better-sqlite3`'s pre-built binary is reused from the persistent BuildKit cache on every rebuild — even when `--no-cache` is passed for the frontend — so native compilation never occurs.
+
 ### Manual Update Process
 
 If you prefer manual control:
