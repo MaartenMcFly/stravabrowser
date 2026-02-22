@@ -230,13 +230,14 @@ async function loadPmc() {
     const data = await getPmc();
     pmcAllPoints = data.points || [];
     pmcMeta.value = { powerRideCount: data.powerRideCount, hrRideCount: data.hrRideCount };
+    // Clear loading before nextTick so the canvas is in the DOM when renderPmcChart runs
+    pmcLoading.value = false;
     await nextTick();
     renderPmcChart();
   } catch (err) {
     pmcError.value = 'Failed to load PMC data.';
-    console.error(err);
-  } finally {
     pmcLoading.value = false;
+    console.error(err);
   }
 }
 
