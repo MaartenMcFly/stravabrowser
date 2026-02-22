@@ -25,6 +25,11 @@ STRAVA_CLIENT_ID=your_actual_client_id
 STRAVA_CLIENT_SECRET=your_actual_client_secret
 STRAVA_REDIRECT_URI=http://localhost:180/auth/callback
 SESSION_SECRET=your_generated_secret_here
+
+# Optional: Whoop integration (leave blank to disable)
+WHOOP_CLIENT_ID=
+WHOOP_CLIENT_SECRET=
+WHOOP_REDIRECT_URI=http://localhost:180/whoop/callback
 ```
 
 **Generate a secure session secret:**
@@ -133,7 +138,10 @@ Pulls latest code and restarts containers without rebuilding. **Fastest option**
 The backend Dockerfile uses a BuildKit npm cache mount (`--mount=type=cache,target=/root/.npm`).
 The `update.sh` script sets `DOCKER_BUILDKIT=1` to activate this.
 
-This means `better-sqlite3`'s pre-built binary is reused from the persistent BuildKit cache on every rebuild — even when `--no-cache` is passed for the frontend — so native compilation never occurs.
+The backend uses `node:18-slim` (Debian/glibc) rather than Alpine so that `better-sqlite3` can
+download its pre-built glibc x64 binary instead of compiling from C++ source. Combined with the
+BuildKit npm cache mount, this means `better-sqlite3` is never recompiled — npm install on a
+warm cache takes ~30 seconds instead of ~3 minutes.
 
 ### Manual Update Process
 
@@ -276,7 +284,7 @@ For production deployment:
 │  └────────────────────────────────────┘ │
 │               ↓ HTTP                     │
 │  ┌────────────────────────────────────┐ │
-│  │  Backend (node:20-alpine)          │ │
+│  │  Backend (node:18-slim)            │ │
 │  │  Port 1300 → 3000                  │ │
 │  │  - Express server                  │ │
 │  │  - OAuth flow                      │ │

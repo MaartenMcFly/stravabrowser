@@ -1,6 +1,6 @@
 # Strava Activity Browser
 
-A web application to browse your Strava activities with intelligent caching, equipment tracking, and statistics visualization using secure OAuth 2.0 authentication.
+A web application to browse your Strava activities with intelligent caching, performance analytics, equipment tracking, and statistics visualization using secure OAuth 2.0 authentication.
 
 ## Features
 
@@ -10,9 +10,10 @@ A web application to browse your Strava activities with intelligent caching, equ
 - Session-based authentication with athlete ID tracking
 
 ### 📊 Activity Management
-- Browse paginated activities (50 per page)
-- Interactive map thumbnails for each activity
+- Browse paginated activities (30 per page)
+- Interactive map thumbnails using real OpenStreetMap tiles
 - Click maps to open activity on Strava
+- Edit activity name, description, and gear directly in the app
 - Smart caching with 24-hour TTL
 - Athlete ID-based cache (survives restarts)
 
@@ -27,17 +28,22 @@ A web application to browse your Strava activities with intelligent caching, equ
 - Toggle multiple years for comparison
 - 52-week view (full year progression)
 - Chart.js powered visualizations
-- Full-width responsive charts
 
 ### 🔁 Similar Activities
 - Groups repeated workouts by name for side-by-side comparison
 - Extracts clean workout names from TrainerRoad, WAHOO SYSTM, and Zwift titles
 - Sorted by most recent occurrence
 - Per-workout summary: count, avg distance, avg time, avg speed, avg ascent
-- Per-occurrence list with normalized power and heart rate
+
+### 💪 Fitness Tracking (Performance Management Chart)
+- Performance Management Chart (PMC) showing CTL, ATL, and TSB over time
+- Power-based TSS for rides with a power meter; hrTSS fallback using heart rate
+- Manual FTP history table so each historical activity uses the correct FTP
+- Optional Whoop integration: HRV and recovery score overlaid on the PMC
 
 ### ⚙️ Administration
-- Cache invalidation button to force a full reload of all activities from Strava
+- Check for new activities and import them immediately (bypasses 24-hour TTL)
+- Cache invalidation to force a full reload of all activities from Strava
 
 ### 💾 Intelligent Caching
 - SQLite database with persistent storage
@@ -47,14 +53,14 @@ A web application to browse your Strava activities with intelligent caching, equ
 - Equipment: cached permanently on first fetch (no TTL)
 - Automatic migration from old sessions
 
-## Architecture
+## Documentation
 
-See **[ARCHITECTURE.md](ARCHITECTURE.md)** for detailed component diagrams and data flows.
-
-- **Backend**: Node.js 20/Express with SQLite caching
-- **Frontend**: Vue.js 3 + Vite with Chart.js
-- **Database**: SQLite with athlete ID-based persistence
-- **Security**: Session-based auth, tokens never exposed to frontend
+| File | Contents |
+|------|----------|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Component diagrams and data flows |
+| [SCHEMA.md](SCHEMA.md) | Full SQLite schema with column types and notes |
+| [API.md](API.md) | Complete API reference for all endpoints |
+| [DOCKER.md](DOCKER.md) | Docker deployment guide |
 
 ## Deployment Options
 
@@ -77,7 +83,7 @@ docker compose up -d
 
 ## Prerequisites
 
-- Node.js 20+ installed
+- Node.js 18+ installed
 - Strava API credentials (Client ID and Client Secret)
 
 ## Getting Your Strava API Credentials
@@ -86,6 +92,7 @@ docker compose up -d
 2. Create a new application
 3. Set the Authorization Callback Domain to `localhost`
 4. Note your Client ID and Client Secret
+5. Ensure your app has the `profile:read_all` scope enabled (required for FTP data)
 
 ## Setup Instructions
 
@@ -116,6 +123,11 @@ SESSION_SECRET=generate_a_random_32_character_string_here
 PORT=3000
 FRONTEND_URL=http://localhost:5173
 NODE_ENV=development
+
+# Optional: Whoop integration
+WHOOP_CLIENT_ID=
+WHOOP_CLIENT_SECRET=
+WHOOP_REDIRECT_URI=http://localhost:3000/whoop/callback
 ```
 
 **Important**: Generate a secure random string for `SESSION_SECRET`:
@@ -141,7 +153,7 @@ npm run dev:frontend   # Frontend on http://localhost:5173
 1. Open http://localhost:5173 in your browser
 2. Click "Login with Strava"
 3. Authorize the application
-4. Browse your activities, equipment, and statistics
+4. Browse your activities, equipment, statistics, and fitness data
 
 ## Project Structure
 
@@ -149,27 +161,32 @@ npm run dev:frontend   # Frontend on http://localhost:5173
 stravabrowser/
 ├── backend/              # Node.js/Express backend
 │   ├── src/
-│   │   ├── config/       # Strava API configuration
-│   │   ├── routes/       # API routes (auth, activities, equipment, statistics, admin)
-│   │   ├── services/     # Strava API client, caching service
-│   │   ├── middleware/   # Authentication middleware
-│   │   ├── db/           # SQLite database initialization
+│   │   ├── config/       # Strava and Whoop API configuration
+│   │   ├── routes/       # API routes (auth, activities, equipment,
+│   │   │                 #   statistics, admin, athlete, ftpHistory,
+│   │   │                 #   fitness, whoop)
+│   │   ├── services/     # Strava API client, Whoop API client, caching service
+│   │   ├── middleware/   # Authentication middleware, error handler
+│   │   ├── db/           # SQLite database initialization and schema
 │   │   └── utils/        # Token storage, workout name extraction
 │   ├── data/             # SQLite database files (gitignored)
 │   └── package.json
 ├── frontend/             # Vue.js 3 frontend
 │   ├── src/
-│   │   ├── components/   # ActivityCard, ActivityList
-│   │   ├── views/        # Dashboard, Equipment, Statistics, SimilarActivities, Admin
+│   │   ├── components/   # ActivityCard, ActivityList, EditActivityModal
+│   │   ├── views/        # Dashboard, Equipment, Statistics,
+│   │   │                 #   SimilarActivities, Fitness, Admin
 │   │   ├── router/       # Vue Router with auth guards
 │   │   ├── stores/       # Pinia auth store
-│   │   ├── utils/        # Workout name extraction
-│   │   └── services/     # API service layer
+│   │   ├── utils/        # Workout name extraction, polyline/map tile math
+│   │   └── services/     # API service layer (api.js)
 │   └── package.json
-├── .claude/              # Claude Code configuration
+├── .claude/              # Claude Code configuration (hooks, rules, skills)
 ├── ARCHITECTURE.md       # System architecture documentation
-├── DOCKER.md            # Docker deployment guide
-└── package.json         # Root workspace config
+├── SCHEMA.md             # SQLite database schema reference
+├── API.md                # REST API reference
+├── DOCKER.md             # Docker deployment guide
+└── package.json          # Root workspace config
 ```
 
 ## Data Persistence
@@ -177,14 +194,23 @@ stravabrowser/
 ### SQLite Caching
 - **Location**: `backend/data/strava_cache.db`
 - **Strategy**: Athlete ID-based (not session-based)
-- **TTL**: 24 hours for activities and equipment
+- **TTL**: 24 hours for activities; no TTL for equipment
 - **Updates**: Incremental (only fetch new activities)
 - **Survival**: Cache survives container restarts and deployments
 
 ### Cache Tables
-- `activities`: All activity data including power (average_watts, weighted_average_watts) and polylines
-- `equipment`: Gear details and totals
-- `cache_metadata`: TTL tracking per athlete
+See **[SCHEMA.md](SCHEMA.md)** for the full schema. Summary:
+
+| Table | Contents |
+|-------|----------|
+| `activities` | All Strava activity data including power, HR, polylines |
+| `equipment` | Gear details and totals |
+| `cache_metadata` | TTL tracking per athlete |
+| `athletes` | FTP and profile data from Strava |
+| `ftp_history` | Manual FTP timeline for accurate historical TSS |
+| `whoop_tokens` | Whoop OAuth tokens |
+| `whoop_recoveries` | Daily Whoop HRV and recovery scores |
+| `whoop_cycles` | Daily Whoop strain data |
 
 ## Security Notes
 
@@ -203,9 +229,10 @@ stravabrowser/
 4. Strava redirects back with authorization code
 5. Backend exchanges code for tokens
 6. Tokens stored with session ID, athlete ID saved in session
-7. User redirected to dashboard
-8. Activities cached with athlete ID (not session ID)
-9. Cache survives restarts and future logins
+7. Athlete FTP and profile saved from Strava
+8. User redirected to dashboard
+9. Activities cached with athlete ID (not session ID)
+10. Cache survives restarts and future logins
 
 ## Troubleshooting
 
@@ -222,16 +249,15 @@ stravabrowser/
 - Check browser console for errors
 - Verify your Strava account has activities
 - Check backend logs: `docker compose logs backend`
-- Database may have old session data - try logging out and back in
+- Database may have old session data — try logging out and back in
+
+### "FTP shows as null on Fitness page"
+- Log out and log back in to re-authorize with the `profile:read_all` scope
+- Verify your Strava app has the scope enabled
 
 ### "Activities refetching every restart"
-- Fixed! Cache now uses athlete ID instead of session ID
+- Fixed. Cache now uses athlete ID instead of session ID
 - Activities persist across container restarts
-- Only refetches after 24-hour TTL expires
-
-### "Statistics page not full width"
-- Clear browser cache (Cmd+Shift+R)
-- Rebuild Docker containers: `docker compose build --no-cache frontend`
 
 ## License
 
