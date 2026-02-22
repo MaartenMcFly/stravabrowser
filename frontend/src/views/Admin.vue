@@ -11,6 +11,26 @@
 
     <main class="main">
       <div class="admin-container">
+
+        <!-- Sync new activities -->
+        <div class="admin-card">
+          <h2 class="card-title">Sync New Activities</h2>
+          <p class="card-description">
+            Check Strava for activities that have been recorded since the last cache update
+            and import them immediately, without waiting for the 24-hour refresh cycle.
+          </p>
+
+          <button
+            @click="handleSync"
+            class="primary-button"
+            :disabled="isSyncing"
+          >
+            <span v-if="isSyncing">Checking Strava…</span>
+            <span v-else>Check for New Activities</span>
+          </button>
+        </div>
+
+        <!-- Cache invalidation -->
         <div class="admin-card">
           <h2 class="card-title">Activity Cache</h2>
           <p class="card-description">
@@ -32,17 +52,53 @@
             <span v-else>Invalidate Cache &amp; Force Full Reload</span>
           </button>
         </div>
+
       </div>
     </main>
+
+    <!-- Sync results dialog -->
+    <Teleport to="body">
+      <div v-if="syncResult" class="dialog-backdrop" @click.self="syncResult = null">
+        <div class="dialog">
+          <div class="dialog-header">
+            <h3 class="dialog-title">Sync Results</h3>
+            <button class="dialog-close" @click="syncResult = null">✕</button>
+          </div>
+
+          <div class="dialog-body">
+            <p class="sync-message" :class="syncResult.imported > 0 ? 'sync-success' : 'sync-none'">
+              {{ syncResult.message }}
+            </p>
+
+            <ul v-if="syncResult.activities.length > 0" class="activity-list">
+              <li
+                v-for="activity in syncResult.activities"
+                :key="activity.start_date"
+                class="activity-item"
+              >
+                <span class="activity-name">{{ activity.name }}</span>
+                <span class="activity-date">{{ formatDate(activity.start_date) }}</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="dialog-footer">
+            <button class="close-button" @click="syncResult = null">Close</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { invalidateCache } from '../services/api';
+import { invalidateCache, syncActivities } from '../services/api';
 
 const router = useRouter();
+
+// Cache invalidation
 const isLoading = ref(false);
 const message = ref('');
 const messageType = ref('success');
@@ -50,7 +106,6 @@ const messageType = ref('success');
 async function handleInvalidate() {
   isLoading.value = true;
   message.value = '';
-
   try {
     const response = await invalidateCache();
     message.value = response.message;
@@ -62,6 +117,26 @@ async function handleInvalidate() {
   } finally {
     isLoading.value = false;
   }
+}
+
+// Activity sync
+const isSyncing = ref(false);
+const syncResult = ref(null);
+
+async function handleSync() {
+  isSyncing.value = true;
+  try {
+    syncResult.value = await syncActivities();
+  } catch (err) {
+    console.error('Sync failed:', err);
+    syncResult.value = { imported: 0, activities: [], message: 'Failed to check for new activities. Please try again.' };
+  } finally {
+    isSyncing.value = false;
+  }
+}
+
+function formatDate(dateStr) {
+  return new Date(dateStr).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function goToDashboard() {
@@ -162,6 +237,31 @@ function goToDashboard() {
   border: 1px solid #fecaca;
 }
 
+.admin-card + .admin-card {
+  margin-top: 1.5rem;
+}
+
+.primary-button {
+  padding: 0.75rem 1.75rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: background 0.3s;
+}
+
+.primary-button:hover:not(:disabled) {
+  background: #5a6fd6;
+}
+
+.primary-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .danger-button {
   padding: 0.75rem 1.75rem;
   background: #dc2626;
@@ -181,5 +281,127 @@ function goToDashboard() {
 .danger-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Dialog */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  width: 480px;
+  max-width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dialog-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.dialog-close {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: #888;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+
+.dialog-close:hover {
+  color: #333;
+}
+
+.dialog-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.sync-message {
+  margin: 0 0 1rem;
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+.sync-success { color: #065f46; }
+.sync-none    { color: #374151; }
+
+.activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.activity-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.625rem 1rem;
+  font-size: 0.9rem;
+}
+
+.activity-item + .activity-item {
+  border-top: 1px solid #e5e7eb;
+}
+
+.activity-name {
+  color: #111;
+  font-weight: 500;
+}
+
+.activity-date {
+  color: #6b7280;
+  white-space: nowrap;
+  margin-left: 1rem;
+}
+
+.dialog-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.close-button {
+  padding: 0.6rem 1.5rem;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: background 0.2s;
+}
+
+.close-button:hover {
+  background: #e5e7eb;
 }
 </style>

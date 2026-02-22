@@ -104,6 +104,15 @@ export async function invalidateCache() {
 }
 
 /**
+ * Check Strava for new activities and import any that aren't cached yet.
+ * Returns { imported, activities, message }.
+ */
+export async function syncActivities() {
+  const response = await apiClient.post('/admin/sync-activities');
+  return response.data;
+}
+
+/**
  * Get unique activity names that appear more than once
  */
 export async function getActivityNames() {
