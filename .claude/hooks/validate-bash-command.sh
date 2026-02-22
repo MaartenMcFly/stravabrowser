@@ -129,6 +129,13 @@ BLOCKED_PATTERNS=(
   "sudo"
   "chmod 777 *"
   "chown root *"
+
+  # Docker — volume/data destruction (would delete the strava-data SQLite volume)
+  "docker volume rm *"
+  "docker volume prune*"
+  "docker system prune*"
+  "docker compose down -v*"
+  "docker-compose down -v*"
 )
 
 # ---------------------------------------------------------------------------
