@@ -112,7 +112,51 @@ router.get('/pmc', requireAuth, (req, res) => {
     points.push({ date: dateStr, tss, ctl, atl, tsb });
   }
 
-  res.json({ points, powerRideCount, hrRideCount, zoneDistribution: zoneMinutes });
+  // Return activities with zone info so frontend can filter by timeframe
+  const activitiesWithZones = activities.map(a => {
+    if (!a.start_date) return null;
+    const dateStr = a.start_date.substring(0, 10);
+    const ftpEntry = cache.getFtpForDate(athleteId, dateStr);
+    if (!ftpEntry) return null;
+
+    const ftp = ftpEntry.ftp;
+    let zone = null;
+
+    if (a.device_watts && a.weighted_average_watts > 0 && ftp > 0) {
+      const intensityPercent = (a.weighted_average_watts / ftp) * 100;
+      if (intensityPercent < 56) zone = 'z1_endurance';
+      else if (intensityPercent < 76) zone = 'z2_tempo';
+      else if (intensityPercent < 91) zone = 'z3_sweetspot';
+      else if (intensityPercent < 106) zone = 'z4_threshold';
+      else if (intensityPercent < 121) zone = 'z5_vo2max';
+      else if (intensityPercent < 151) zone = 'z6_anaerobic';
+      else zone = 'z7_neuromuscular';
+    } else if (a.average_heartrate && maxHr) {
+      const hrReserve = maxHr - 60;
+      const intensityPercent = ((a.average_heartrate - 60) / hrReserve) * 100;
+      if (intensityPercent < 50) zone = 'z1_endurance';
+      else if (intensityPercent < 60) zone = 'z2_tempo';
+      else if (intensityPercent < 70) zone = 'z3_sweetspot';
+      else if (intensityPercent < 80) zone = 'z4_threshold';
+      else if (intensityPercent < 90) zone = 'z5_vo2max';
+      else if (intensityPercent < 100) zone = 'z6_anaerobic';
+      else zone = 'z7_neuromuscular';
+    }
+
+    return {
+      date: dateStr,
+      moving_time: a.moving_time || 0,
+      zone,
+    };
+  }).filter(a => a !== null);
+
+  res.json({
+    points,
+    powerRideCount,
+    hrRideCount,
+    zoneDistribution: zoneMinutes,
+    activitiesWithZones,
+  });
 });
 
 /**

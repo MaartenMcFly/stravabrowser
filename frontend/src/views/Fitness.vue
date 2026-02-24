@@ -36,32 +36,42 @@
 
       <!-- Card 2: Training Zone Distribution -->
       <div v-if="zoneDistribution" class="card">
-        <h2 class="card-title">Training Zone Distribution</h2>
-        <p class="zone-subtitle">Time spent in each training zone (all time)</p>
+        <div class="card-header-row">
+          <h2 class="card-title">Training Zone Distribution</h2>
+          <div class="range-toggles">
+            <button
+              v-for="r in ranges"
+              :key="r.label"
+              :class="['range-btn', { active: activeZoneRange === r.label }]"
+              @click="setZoneRange(r.label)"
+            >{{ r.label }}</button>
+          </div>
+        </div>
+        <p class="zone-subtitle">Time spent in each training zone ({{ activeZoneRange.toLowerCase() }})</p>
 
         <div class="zones-grid">
           <div v-for="(zone, key) in zoneLabels" :key="key" class="zone-card" :class="`zone-${key}`">
             <div class="zone-label">{{ zone.name }}</div>
             <div class="zone-value">
-              {{ formatHours(zoneDistribution[key]) }}
+              {{ formatHours(filteredZoneDistribution[key]) }}
             </div>
             <div class="zone-description">{{ zone.description }}</div>
             <div class="zone-bar">
-              <div class="zone-fill" :style="{ width: getZonePercent(key) + '%' }"></div>
+              <div class="zone-fill" :style="{ width: getFilteredZonePercent(key) + '%' }"></div>
             </div>
           </div>
         </div>
 
         <div class="zones-summary">
           <div class="summary-item">
-            <strong>Total Training Time:</strong> {{ formatHours(getTotalZoneMinutes()) }}
+            <strong>Total Training Time:</strong> {{ formatHours(getTotalFilteredZoneMinutes()) }}
           </div>
           <div class="summary-item">
             <strong>Polarization:</strong>
-            <span v-if="polarizationIndex < 1.5" class="polarization-warn">
+            <span v-if="filteredPolarizationIndex < 1.5" class="polarization-warn">
               Low (mostly moderate intensity — consider adding easy + hard sessions)
             </span>
-            <span v-else-if="polarizationIndex < 3" class="polarization-ok">
+            <span v-else-if="filteredPolarizationIndex < 3" class="polarization-ok">
               Good (balanced easy/hard with some sweet spot)
             </span>
             <span v-else class="polarization-good">
@@ -251,7 +261,9 @@ const pmcLoading = ref(true);
 const pmcError = ref('');
 const pmcMeta = ref(null);
 const zoneDistribution = ref(null);
+const activitiesWithZones = ref([]);
 const activeRange = ref('1 year');
+const activeZoneRange = ref('1 year');
 const ranges = [
   { label: '3 months', days: 90 },
   { label: '6 months', days: 180 },
@@ -301,6 +313,7 @@ async function loadPmc() {
     pmcAllPoints = data.points || [];
     pmcMeta.value = { powerRideCount: data.powerRideCount, hrRideCount: data.hrRideCount };
     zoneDistribution.value = data.zoneDistribution || null;
+    activitiesWithZones.value = data.activitiesWithZones || [];
     // Clear loading before nextTick so the canvas is in the DOM when renderPmcChart runs
     pmcLoading.value = false;
     await nextTick();
@@ -344,6 +357,65 @@ function calculatePolarizationIndex() {
 }
 
 const polarizationIndex = computed(() => calculatePolarizationIndex());
+
+// Zone filtering by timeframe
+function setZoneRange(label) {
+  activeZoneRange.value = label;
+}
+
+function getFilteredActivities() {
+  const rangeObj = ranges.find(r => r.label === activeZoneRange.value);
+  if (!rangeObj || !activitiesWithZones.value) return [];
+
+  if (!rangeObj.days) {
+    return activitiesWithZones.value;
+  }
+
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - rangeObj.days);
+  const cutoffStr = cutoff.toISOString().substring(0, 10);
+
+  return activitiesWithZones.value.filter(a => a.date >= cutoffStr);
+}
+
+const filteredZoneDistribution = computed(() => {
+  const filtered = getFilteredActivities();
+  const dist = {
+    z1_endurance: 0,
+    z2_tempo: 0,
+    z3_sweetspot: 0,
+    z4_threshold: 0,
+    z5_vo2max: 0,
+    z6_anaerobic: 0,
+    z7_neuromuscular: 0,
+  };
+
+  filtered.forEach(a => {
+    if (a.zone && dist.hasOwnProperty(a.zone)) {
+      dist[a.zone] += a.moving_time / 60;
+    }
+  });
+
+  return dist;
+});
+
+function getTotalFilteredZoneMinutes() {
+  return Object.values(filteredZoneDistribution.value).reduce((sum, val) => sum + (val || 0), 0);
+}
+
+function getFilteredZonePercent(key) {
+  const total = getTotalFilteredZoneMinutes();
+  if (!total) return 0;
+  return ((filteredZoneDistribution.value[key] || 0) / total) * 100;
+}
+
+const filteredPolarizationIndex = computed(() => {
+  const dist = filteredZoneDistribution.value;
+  const easy = (dist.z1_endurance || 0) + (dist.z2_tempo || 0);
+  const moderate = (dist.z3_sweetspot || 0) + (dist.z4_threshold || 0);
+  const hard = (dist.z5_vo2max || 0) + (dist.z6_anaerobic || 0) + (dist.z7_neuromuscular || 0);
+  return moderate > 0 ? (easy + hard) / moderate : 0;
+});
 
 function setRange(label) {
   activeRange.value = label;
