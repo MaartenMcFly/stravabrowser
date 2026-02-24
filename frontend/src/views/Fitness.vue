@@ -34,6 +34,43 @@
         </div>
       </div>
 
+      <!-- Card 2: Training Zone Distribution -->
+      <div v-if="zoneDistribution" class="card">
+        <h2 class="card-title">Training Zone Distribution</h2>
+        <p class="zone-subtitle">Time spent in each training zone (all time)</p>
+
+        <div class="zones-grid">
+          <div v-for="(zone, key) in zoneLabels" :key="key" class="zone-card" :class="`zone-${key}`">
+            <div class="zone-label">{{ zone.name }}</div>
+            <div class="zone-value">
+              {{ formatHours(zoneDistribution[key]) }}
+            </div>
+            <div class="zone-description">{{ zone.description }}</div>
+            <div class="zone-bar">
+              <div class="zone-fill" :style="{ width: getZonePercent(key) + '%' }"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="zones-summary">
+          <div class="summary-item">
+            <strong>Total Training Time:</strong> {{ formatHours(getTotalZoneMinutes()) }}
+          </div>
+          <div class="summary-item">
+            <strong>Polarization:</strong>
+            <span v-if="polarizationIndex < 1.5" class="polarization-warn">
+              Low (mostly moderate intensity — consider adding easy + hard sessions)
+            </span>
+            <span v-else-if="polarizationIndex < 3" class="polarization-ok">
+              Good (balanced easy/hard with some sweet spot)
+            </span>
+            <span v-else class="polarization-good">
+              High (strong polarization — mostly easy and hard, minimal moderate)
+            </span>
+          </div>
+        </div>
+      </div>
+
       <!-- Card 3: Whoop / HRV -->
       <div class="card">
         <h2 class="card-title">HRV &amp; Recovery (Whoop)</h2>
@@ -117,7 +154,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import {
   Chart,
@@ -213,6 +250,7 @@ const pmcCanvas = ref(null);
 const pmcLoading = ref(true);
 const pmcError = ref('');
 const pmcMeta = ref(null);
+const zoneDistribution = ref(null);
 const activeRange = ref('1 year');
 const ranges = [
   { label: '3 months', days: 90 },
@@ -223,6 +261,38 @@ const ranges = [
 let pmcAllPoints = [];
 let pmcChart = null;
 
+// Zone labels and descriptions (power/HR based)
+const zoneLabels = {
+  z1_endurance: {
+    name: 'Z1 — Endurance',
+    description: 'Active recovery, base building (<56% FTP)',
+  },
+  z2_tempo: {
+    name: 'Z2 — Tempo',
+    description: 'Steady-state, aerobic (56-75% FTP)',
+  },
+  z3_sweetspot: {
+    name: 'Z3 — Sweet Spot',
+    description: 'Threshold work (76-90% FTP)',
+  },
+  z4_threshold: {
+    name: 'Z4 — Threshold',
+    description: 'Lactate threshold (91-105% FTP)',
+  },
+  z5_vo2max: {
+    name: 'Z5 — VO₂Max',
+    description: 'High intensity (106-120% FTP)',
+  },
+  z6_anaerobic: {
+    name: 'Z6 — Anaerobic',
+    description: 'Anaerobic power (121-150% FTP)',
+  },
+  z7_neuromuscular: {
+    name: 'Z7 — Neuromuscular',
+    description: 'Max effort/sprints (>150% FTP)',
+  },
+};
+
 async function loadPmc() {
   try {
     pmcLoading.value = true;
@@ -230,6 +300,7 @@ async function loadPmc() {
     const data = await getPmc();
     pmcAllPoints = data.points || [];
     pmcMeta.value = { powerRideCount: data.powerRideCount, hrRideCount: data.hrRideCount };
+    zoneDistribution.value = data.zoneDistribution || null;
     // Clear loading before nextTick so the canvas is in the DOM when renderPmcChart runs
     pmcLoading.value = false;
     await nextTick();
@@ -240,6 +311,39 @@ async function loadPmc() {
     console.error(err);
   }
 }
+
+function getTotalZoneMinutes() {
+  if (!zoneDistribution.value) return 0;
+  return Object.values(zoneDistribution.value).reduce((sum, val) => sum + (val || 0), 0);
+}
+
+function getZonePercent(key) {
+  const total = getTotalZoneMinutes();
+  if (!total || !zoneDistribution.value) return 0;
+  return ((zoneDistribution.value[key] || 0) / total) * 100;
+}
+
+function formatHours(minutes) {
+  const h = Math.floor(minutes / 60);
+  const m = Math.round(minutes % 60);
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
+
+function calculatePolarizationIndex() {
+  if (!zoneDistribution.value) return 0;
+  // Polarization index = (easy + hard) / moderate
+  // Easy = Z1+Z2, Moderate = Z3+Z4, Hard = Z5+Z6+Z7
+  const easy = (zoneDistribution.value.z1_endurance || 0) + (zoneDistribution.value.z2_tempo || 0);
+  const moderate = (zoneDistribution.value.z3_sweetspot || 0) + (zoneDistribution.value.z4_threshold || 0);
+  const hard = (zoneDistribution.value.z5_vo2max || 0)
+    + (zoneDistribution.value.z6_anaerobic || 0)
+    + (zoneDistribution.value.z7_neuromuscular || 0);
+  return moderate > 0 ? (easy + hard) / moderate : 0;
+}
+
+const polarizationIndex = computed(() => calculatePolarizationIndex());
 
 function setRange(label) {
   activeRange.value = label;
@@ -762,5 +866,144 @@ watch(activeRange, () => renderPmcChart());
 .empty-hint {
   color: #9ca3af;
   font-style: italic;
+}
+
+/* Training Zones */
+.zone-subtitle {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0 0 1.5rem 0;
+}
+
+.zones-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.zone-card {
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1.25rem;
+  background: #fafbfc;
+}
+
+.zone-card.zone-z1_endurance {
+  border-left: 4px solid #3b82f6;
+}
+
+.zone-card.zone-z2_tempo {
+  border-left: 4px solid #06b6d4;
+}
+
+.zone-card.zone-z3_sweetspot {
+  border-left: 4px solid #10b981;
+}
+
+.zone-card.zone-z4_threshold {
+  border-left: 4px solid #f59e0b;
+}
+
+.zone-card.zone-z5_vo2max {
+  border-left: 4px solid #ef4444;
+}
+
+.zone-card.zone-z6_anaerobic {
+  border-left: 4px solid #dc2626;
+}
+
+.zone-card.zone-z7_neuromuscular {
+  border-left: 4px solid #7c2d12;
+}
+
+.zone-label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.zone-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.zone-description {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-bottom: 0.75rem;
+}
+
+.zone-bar {
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.zone-fill {
+  height: 100%;
+  background: currentColor;
+  opacity: 0.6;
+  transition: width 0.3s;
+}
+
+.zone-card.zone-z1_endurance .zone-fill {
+  background: #3b82f6;
+}
+
+.zone-card.zone-z2_tempo .zone-fill {
+  background: #06b6d4;
+}
+
+.zone-card.zone-z3_sweetspot .zone-fill {
+  background: #10b981;
+}
+
+.zone-card.zone-z4_threshold .zone-fill {
+  background: #f59e0b;
+}
+
+.zone-card.zone-z5_vo2max .zone-fill {
+  background: #ef4444;
+}
+
+.zone-card.zone-z6_anaerobic .zone-fill {
+  background: #dc2626;
+}
+
+.zone-card.zone-z7_neuromuscular .zone-fill {
+  background: #7c2d12;
+}
+
+.zones-summary {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.summary-item {
+  font-size: 0.95rem;
+  color: #374151;
+  margin: 0.75rem 0;
+}
+
+.polarization-warn {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.polarization-ok {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.polarization-good {
+  color: #10b981;
+  font-weight: 600;
 }
 </style>
