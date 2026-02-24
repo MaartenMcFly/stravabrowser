@@ -39,6 +39,8 @@ A web application to browse your Strava activities with intelligent caching, per
 - Performance Management Chart (PMC) showing CTL, ATL, and TSB over time
 - Power-based TSS for rides with a power meter; hrTSS fallback using heart rate
 - Manual FTP history table so each historical activity uses the correct FTP
+- Training zone distribution: time spent in each of 7 zones (Z1 easy through Z7 neuromuscular)
+- Polarization index to assess if training is balanced (easy + hard) or monotonous (too much moderate)
 - Optional Whoop integration: HRV and recovery score overlaid on the PMC
 
 ### ⚙️ Administration

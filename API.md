@@ -253,15 +253,24 @@ another athlete's entries.
 ## Fitness — `/api/fitness`
 
 ### GET /api/fitness/pmc
-Returns Performance Management Chart data from the earliest cached activity to today.
+Returns Performance Management Chart data from the earliest cached activity to today, plus training zone distribution.
 
-Returns `{ points: [], powerRideCount: 0, hrRideCount: 0 }` when no FTP history exists.
+Returns `{ points: [], powerRideCount: 0, hrRideCount: 0, zoneDistribution: null }` when no FTP history exists.
 Activities before the earliest `ftp_history.valid_from` date are excluded.
 
 **TSS calculation** (see `SCHEMA.md` → ftp_history for detail):
 - Power TSS used when `device_watts = 1` and `weighted_average_watts > 0`
 - hrTSS fallback used otherwise when `average_heartrate` is available
 - Activities with neither are excluded
+
+**Training zones** (power-based; HR-based for activities without power data):
+- Z1 Endurance: <56% FTP
+- Z2 Tempo: 56–75% FTP
+- Z3 Sweet Spot: 76–90% FTP
+- Z4 Threshold: 91–105% FTP
+- Z5 VO₂Max: 106–120% FTP
+- Z6 Anaerobic: 121–150% FTP
+- Z7 Neuromuscular: >150% FTP
 
 ```json
 {
@@ -271,11 +280,21 @@ Activities before the earliest `ftp_history.valid_from` date are excluded.
     ...
   ],
   "powerRideCount": 842,
-  "hrRideCount": 115
+  "hrRideCount": 115,
+  "zoneDistribution": {
+    "z1_endurance": 2850,
+    "z2_tempo": 1200,
+    "z3_sweetspot": 890,
+    "z4_threshold": 420,
+    "z5_vo2max": 310,
+    "z6_anaerobic": 180,
+    "z7_neuromuscular": 45
+  }
 }
 ```
 
 One point per calendar day from first activity to today (including rest days with `tss: 0`).
+Zone times are in minutes. Polarization index = (easy + hard) / moderate; >3 indicates good polarization.
 
 ### GET /api/fitness/hrv
 Returns all cached Whoop recovery records for the athlete, in date order.
