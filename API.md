@@ -289,12 +289,18 @@ Activities before the earliest `ftp_history.valid_from` date are excluded.
     "z5_vo2max": 310,
     "z6_anaerobic": 180,
     "z7_neuromuscular": 45
-  }
+  },
+  "activitiesWithZones": [
+    { "date": "2019-11-20", "moving_time": 3600, "zone": "z3_sweetspot" },
+    { "date": "2019-11-21", "moving_time": 2400, "zone": "z1_endurance" },
+    ...
+  ]
 }
 ```
 
 One point per calendar day from first activity to today (including rest days with `tss: 0`).
 Zone times are in minutes. Polarization index = (easy + hard) / moderate; >3 indicates good polarization.
+`activitiesWithZones` is an array of activities with their zone classification (moving_time in seconds, zone as z1–z7 key), enabling frontend filtering by timeframe.
 
 ### GET /api/fitness/hrv
 Returns all cached Whoop recovery records for the athlete, in date order.
