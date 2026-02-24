@@ -50,11 +50,11 @@ router.get('/pmc', requireAuth, (req, res) => {
     let tss = null;
     const movingTime = activity.moving_time || 0;
 
-    // Power-based TSS (prefer this)
-    if (activity.device_watts === 1 && activity.weighted_average_watts > 0 && ftp > 0) {
+    // Power-based TSS (prefer this if we have NP data)
+    if (activity.weighted_average_watts > 0 && ftp > 0) {
       const np = activity.weighted_average_watts;
       tss = (movingTime * np * np) / (ftp * ftp * 3600) * 100;
-      powerRideCount++;
+      if (activity.device_watts === 1) powerRideCount++;
 
       // Classify into power zones
       const intensityPercent = (np / ftp) * 100;
@@ -122,7 +122,7 @@ router.get('/pmc', requireAuth, (req, res) => {
     const ftp = ftpEntry.ftp;
     let zone = null;
 
-    if (a.device_watts && a.weighted_average_watts > 0 && ftp > 0) {
+    if (a.weighted_average_watts > 0 && ftp > 0) {
       const intensityPercent = (a.weighted_average_watts / ftp) * 100;
       if (intensityPercent < 56) zone = 'z1_endurance';
       else if (intensityPercent < 76) zone = 'z2_tempo';
