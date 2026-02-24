@@ -575,6 +575,40 @@ export function getFtpForDate(athleteId, dateStr) {
 }
 
 // ---------------------------------------------------------------------------
+// Power curve data (for interval-based zone calculation)
+// ---------------------------------------------------------------------------
+
+/**
+ * Save power curve data for an activity.
+ * @param {string} activityId
+ * @param {Array} powerCurve - Array of {secs, watts} objects from Strava API
+ */
+export function savePowerCurve(activityId, powerCurve) {
+  db.prepare(`
+    INSERT INTO activity_power_curves (activity_id, power_curve, updated_at)
+    VALUES (?, ?, strftime('%s', 'now'))
+    ON CONFLICT(activity_id) DO UPDATE SET
+      power_curve = excluded.power_curve,
+      updated_at = strftime('%s', 'now')
+  `).run(activityId, JSON.stringify(powerCurve || []));
+}
+
+/**
+ * Get power curve data for an activity.
+ * @param {string} activityId
+ * @returns {Array|null} Array of {secs, watts} objects, or null if not found
+ */
+export function getPowerCurve(activityId) {
+  const row = db.prepare('SELECT power_curve FROM activity_power_curves WHERE activity_id = ?').get(activityId);
+  if (!row) return null;
+  try {
+    return JSON.parse(row.power_curve);
+  } catch (_) {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Whoop integration
 // ---------------------------------------------------------------------------
 

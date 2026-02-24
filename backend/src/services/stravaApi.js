@@ -105,7 +105,7 @@ export async function getActivities(sessionId, page = 1, perPage = 30, gearId = 
 }
 
 /**
- * Get single activity details
+ * Get single activity details (includes power curve if available)
  */
 export async function getActivity(sessionId, activityId) {
   const client = createStravaClient(sessionId);
@@ -116,6 +116,23 @@ export async function getActivity(sessionId, activityId) {
   } catch (error) {
     console.error('Get activity error:', error.response?.data || error.message);
     throw error;
+  }
+}
+
+/**
+ * Fetch detailed activity data and extract power curve.
+ * Power curve is used for interval-based zone classification.
+ * @param {string} sessionId
+ * @param {string} activityId
+ * @returns {Array|null} Power curve array: [{secs, watts}, ...] or null
+ */
+export async function getActivityPowerCurve(sessionId, activityId) {
+  try {
+    const activity = await getActivity(sessionId, activityId);
+    return activity.power_curve || null;
+  } catch (error) {
+    console.error(`Failed to fetch power curve for activity ${activityId}:`, error.message);
+    return null;
   }
 }
 

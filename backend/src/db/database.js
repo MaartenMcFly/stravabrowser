@@ -127,6 +127,13 @@ const initSchema = () => {
       max_heart_rate REAL
     );
 
+    -- Power curve data for interval-based zone calculation
+    CREATE TABLE IF NOT EXISTS activity_power_curves (
+      activity_id TEXT PRIMARY KEY,
+      power_curve TEXT NOT NULL,
+      updated_at INTEGER DEFAULT (strftime('%s', 'now'))
+    );
+
     -- Indexes for performance
     CREATE INDEX IF NOT EXISTS idx_activities_gear_id ON activities(gear_id);
     CREATE INDEX IF NOT EXISTS idx_activities_start_date ON activities(start_date DESC);
@@ -136,6 +143,7 @@ const initSchema = () => {
     CREATE INDEX IF NOT EXISTS idx_ftp_history_athlete ON ftp_history(athlete_id, valid_from DESC);
     CREATE INDEX IF NOT EXISTS idx_whoop_recoveries_athlete ON whoop_recoveries(athlete_id, date ASC);
     CREATE INDEX IF NOT EXISTS idx_whoop_cycles_athlete ON whoop_cycles(athlete_id, date ASC);
+    CREATE INDEX IF NOT EXISTS idx_activity_power_curves ON activity_power_curves(activity_id);
   `);
 
   // Migrations: add columns that may not exist in older databases

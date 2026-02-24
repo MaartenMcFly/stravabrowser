@@ -1,14 +1,71 @@
 import express from 'express';
 import * as cache from '../services/cacheService.js';
+import * as stravaApi from '../services/stravaApi.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
 /**
+ * Calculate zone distribution from a power curve.
+ * Power curve is array of {secs, watts} entries from Strava.
+ * Returns distribution of time spent in each zone.
+ * @param {Array} powerCurve - [{secs, watts}, ...]
+ * @param {number} ftp - Functional Threshold Power in watts
+ * @returns {Object} Zone minutes keyed by z1-z7
+ */
+function calculateZonesFromPowerCurve(powerCurve, ftp) {
+  const zones = {
+    z1_endurance: 0,
+    z2_tempo: 0,
+    z3_sweetspot: 0,
+    z4_threshold: 0,
+    z5_vo2max: 0,
+    z6_anaerobic: 0,
+    z7_neuromuscular: 0,
+  };
+
+  if (!powerCurve || !Array.isArray(powerCurve) || powerCurve.length === 0) {
+    return zones;
+  }
+
+  // Power curve entries are sorted from longest to shortest duration
+  // We estimate time spent at each power level using the curve
+  for (let i = 0; i < powerCurve.length; i++) {
+    const entry = powerCurve[i];
+    const secs = entry.secs || entry.seconds || 0;
+    const watts = entry.watts || 0;
+
+    if (!secs || !watts) continue;
+
+    // Get the time range for this power level
+    // From this duration to the next duration (or +1 sec for last)
+    const prevSecs = i > 0 ? (powerCurve[i - 1].secs || powerCurve[i - 1].seconds || 0) : secs + 1;
+    const timeAtThisLevel = Math.max(0, prevSecs - secs);
+
+    const intensityPercent = (watts / ftp) * 100;
+    let zone;
+
+    if (intensityPercent < 56) zone = 'z1_endurance';
+    else if (intensityPercent < 76) zone = 'z2_tempo';
+    else if (intensityPercent < 91) zone = 'z3_sweetspot';
+    else if (intensityPercent < 106) zone = 'z4_threshold';
+    else if (intensityPercent < 121) zone = 'z5_vo2max';
+    else if (intensityPercent < 151) zone = 'z6_anaerobic';
+    else zone = 'z7_neuromuscular';
+
+    if (zone) {
+      zones[zone] += timeAtThisLevel / 60; // Convert to minutes
+    }
+  }
+
+  return zones;
+}
+
+/**
  * GET /api/fitness/pmc
  * Returns Performance Management Chart data: daily TSS, CTL, ATL, TSB, and training zone distribution
  */
-router.get('/pmc', requireAuth, (req, res) => {
+router.get('/pmc', requireAuth, async (req, res) => {
   const athleteId = req.session.athleteId?.toString();
   if (!athleteId) return res.status(401).json({ error: 'Athlete ID not found in session' });
 
@@ -50,21 +107,44 @@ router.get('/pmc', requireAuth, (req, res) => {
     let tss = null;
     const movingTime = activity.moving_time || 0;
 
+    // Try to use power curve for interval-based zone classification
+    let powerCurveData = cache.getPowerCurve(activity.id);
+    if (!powerCurveData && activity.weighted_average_watts > 0) {
+      // If no cached power curve, fetch it from Strava
+      try {
+        const sessionId = req.session.id;
+        powerCurveData = await stravaApi.getActivityPowerCurve(sessionId, activity.id);
+        if (powerCurveData) {
+          cache.savePowerCurve(activity.id, powerCurveData);
+        }
+      } catch (err) {
+        console.warn(`Could not fetch power curve for activity ${activity.id}:`, err.message);
+      }
+    }
+
     // Power-based TSS (prefer this if we have NP data)
     if (activity.weighted_average_watts > 0 && ftp > 0) {
       const np = activity.weighted_average_watts;
       tss = (movingTime * np * np) / (ftp * ftp * 3600) * 100;
       if (activity.device_watts === 1) powerRideCount++;
 
-      // Classify into power zones
-      const intensityPercent = (np / ftp) * 100;
-      if (intensityPercent < 56) zoneMinutes.z1_endurance += movingTime / 60;
-      else if (intensityPercent < 76) zoneMinutes.z2_tempo += movingTime / 60;
-      else if (intensityPercent < 91) zoneMinutes.z3_sweetspot += movingTime / 60;
-      else if (intensityPercent < 106) zoneMinutes.z4_threshold += movingTime / 60;
-      else if (intensityPercent < 121) zoneMinutes.z5_vo2max += movingTime / 60;
-      else if (intensityPercent < 151) zoneMinutes.z6_anaerobic += movingTime / 60;
-      else zoneMinutes.z7_neuromuscular += movingTime / 60;
+      // Use power curve zones if available, otherwise fall back to average NP
+      if (powerCurveData && powerCurveData.length > 0) {
+        const curveZones = calculateZonesFromPowerCurve(powerCurveData, ftp);
+        Object.keys(curveZones).forEach(key => {
+          zoneMinutes[key] += curveZones[key];
+        });
+      } else {
+        // Fallback: classify by average NP
+        const intensityPercent = (np / ftp) * 100;
+        if (intensityPercent < 56) zoneMinutes.z1_endurance += movingTime / 60;
+        else if (intensityPercent < 76) zoneMinutes.z2_tempo += movingTime / 60;
+        else if (intensityPercent < 91) zoneMinutes.z3_sweetspot += movingTime / 60;
+        else if (intensityPercent < 106) zoneMinutes.z4_threshold += movingTime / 60;
+        else if (intensityPercent < 121) zoneMinutes.z5_vo2max += movingTime / 60;
+        else if (intensityPercent < 151) zoneMinutes.z6_anaerobic += movingTime / 60;
+        else zoneMinutes.z7_neuromuscular += movingTime / 60;
+      }
     } else if (activity.average_heartrate && maxHr) {
       // hrTSS fallback
       const lthr = ftpEntry.lthr || maxHr * 0.88;
@@ -113,6 +193,7 @@ router.get('/pmc', requireAuth, (req, res) => {
   }
 
   // Return activities with zone info so frontend can filter by timeframe
+  // Use power curves when available for more accurate interval-based classification
   const activitiesWithZones = activities.map(a => {
     if (!a.start_date) return null;
     const dateStr = a.start_date.substring(0, 10);
@@ -121,8 +202,22 @@ router.get('/pmc', requireAuth, (req, res) => {
 
     const ftp = ftpEntry.ftp;
     let zone = null;
+    let movingTime = a.moving_time || 0;
 
-    if (a.weighted_average_watts > 0 && ftp > 0) {
+    // Try to get power curve zones
+    const powerCurveData = cache.getPowerCurve(a.id);
+    if (powerCurveData && powerCurveData.length > 0 && a.weighted_average_watts > 0) {
+      // Calculate weighted zone from power curve
+      const curveZones = calculateZonesFromPowerCurve(powerCurveData, ftp);
+      let maxZoneTime = 0;
+      Object.entries(curveZones).forEach(([z, time]) => {
+        if (time > maxZoneTime) {
+          maxZoneTime = time;
+          zone = z;
+        }
+      });
+    } else if (a.weighted_average_watts > 0 && ftp > 0) {
+      // Fallback: classify by average NP
       const intensityPercent = (a.weighted_average_watts / ftp) * 100;
       if (intensityPercent < 56) zone = 'z1_endurance';
       else if (intensityPercent < 76) zone = 'z2_tempo';
@@ -145,7 +240,7 @@ router.get('/pmc', requireAuth, (req, res) => {
 
     return {
       date: dateStr,
-      moving_time: a.moving_time || 0,
+      moving_time: movingTime,
       zone,
     };
   }).filter(a => a !== null);
