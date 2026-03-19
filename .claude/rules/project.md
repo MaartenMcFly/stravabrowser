@@ -282,6 +282,7 @@ Auth routes are mounted at `/auth`, Whoop at `/whoop`, all others at `/api/...`.
 | GET | /api/admin/invalidate-cache | — | |
 | POST | /api/admin/invalidate-cache | `{ success, message }` | clears activity cache only |
 | POST | /api/admin/sync-activities | `{ imported, activities[], message }` | fetches new activities from Strava |
+| POST | /api/admin/invalidate-equipment-cache | `{ success, message }` | clears equipment cache; next Equipment visit re-fetches from Strava |
 | GET | /whoop/login | redirect | starts Whoop OAuth |
 | GET | /whoop/callback | redirect → /fitness | exchanges code, initial sync |
 | GET | /whoop/status | `{ connected, last_sync? }` | |
