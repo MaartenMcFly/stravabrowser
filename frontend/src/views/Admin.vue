@@ -30,6 +30,29 @@
           </button>
         </div>
 
+        <!-- Equipment cache invalidation -->
+        <div class="admin-card">
+          <h2 class="card-title">Equipment Cache</h2>
+          <p class="card-description">
+            Equipment (bikes and shoes) is cached permanently after the first load.
+            Use this button to clear the cache so your gear list is reloaded from Strava,
+            picking up any new or updated equipment.
+          </p>
+
+          <div v-if="equipmentMessage" class="message" :class="equipmentMessageType">
+            {{ equipmentMessage }}
+          </div>
+
+          <button
+            @click="handleInvalidateEquipment"
+            class="danger-button"
+            :disabled="isEquipmentLoading"
+          >
+            <span v-if="isEquipmentLoading">Invalidating...</span>
+            <span v-else>Refresh Equipment from Strava</span>
+          </button>
+        </div>
+
         <!-- Cache invalidation -->
         <div class="admin-card">
           <h2 class="card-title">Activity Cache</h2>
@@ -94,9 +117,30 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { invalidateCache, syncActivities } from '../services/api';
+import { invalidateCache, invalidateEquipmentCache, syncActivities } from '../services/api';
 
 const router = useRouter();
+
+// Equipment cache invalidation
+const isEquipmentLoading = ref(false);
+const equipmentMessage = ref('');
+const equipmentMessageType = ref('success');
+
+async function handleInvalidateEquipment() {
+  isEquipmentLoading.value = true;
+  equipmentMessage.value = '';
+  try {
+    const response = await invalidateEquipmentCache();
+    equipmentMessage.value = response.message;
+    equipmentMessageType.value = 'success';
+  } catch (err) {
+    console.error('Equipment cache invalidation failed:', err);
+    equipmentMessage.value = 'Failed to invalidate equipment cache. Please try again.';
+    equipmentMessageType.value = 'error';
+  } finally {
+    isEquipmentLoading.value = false;
+  }
+}
 
 // Cache invalidation
 const isLoading = ref(false);

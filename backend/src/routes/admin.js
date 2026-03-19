@@ -77,4 +77,21 @@ router.post('/sync-activities', async (req, res, next) => {
   }
 });
 
+/**
+ * POST /api/admin/invalidate-equipment-cache
+ * Clears cached equipment so the next visit to Equipment will re-fetch from Strava.
+ */
+router.post('/invalidate-equipment-cache', (req, res, next) => {
+  try {
+    const athleteId = req.session.athleteId?.toString();
+    if (!athleteId) return res.status(401).json({ error: 'Athlete ID not found in session' });
+
+    cache.clearEquipmentCache(athleteId);
+
+    res.json({ success: true, message: 'Equipment cache cleared. Your gear will be reloaded from Strava on the next visit to Equipment.' });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

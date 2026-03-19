@@ -104,6 +104,14 @@ export async function invalidateCache() {
 }
 
 /**
+ * Invalidate the equipment cache, forcing a re-fetch from Strava on next visit.
+ */
+export async function invalidateEquipmentCache() {
+  const response = await apiClient.post('/admin/invalidate-equipment-cache');
+  return response.data;
+}
+
+/**
  * Check Strava for new activities and import any that aren't cached yet.
  * Returns { imported, activities, message }.
  */

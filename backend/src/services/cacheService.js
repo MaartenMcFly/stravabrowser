@@ -318,6 +318,15 @@ export function clearActivitiesCache(athleteId) {
 }
 
 /**
+ * Delete all cached equipment for an athlete, forcing a re-fetch from Strava.
+ * @param {string} athleteId
+ */
+export function clearEquipmentCache(athleteId) {
+  db.prepare('DELETE FROM equipment WHERE session_id = ?').run(athleteId);
+  console.log(`🗑️  Cleared equipment cache for athlete ${athleteId}`);
+}
+
+/**
  * Delete all cached data for a session (activities, equipment, metadata).
  * Used on logout to clean up stale data.
  * @param {string} sessionId
